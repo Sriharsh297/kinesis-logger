@@ -26,7 +26,12 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import org.kinesis.logger.service.CrashRecoveryManager
 import org.kinesis.logger.service.RecordingService
+import org.kinesis.logger.ui.coverage.CoverageScreen
+import org.kinesis.logger.ui.preflight.PreFlightScreen
 import org.kinesis.logger.ui.recording.RecordingScreen
+import org.kinesis.logger.ui.sessions.SessionsScreen
+import org.kinesis.logger.ui.settings.SettingsScreen
+import org.kinesis.logger.ui.summary.PostSessionScreen
 
 class MainActivity : ComponentActivity() {
 
@@ -97,7 +102,7 @@ fun KinesisAppNavigation(
         }
         composable("preflight") {
             val task = tasks.getOrNull(currentTaskIndex) ?: tasks.first()
-            org.kinesis.logger.ui.preflight.PreFlightPlaceholder(
+            PreFlightScreen(
                 task = task,
                 subjectId = currentSubjectId,
                 onBack = { navController.popBackStack() },
@@ -118,25 +123,28 @@ fun KinesisAppNavigation(
             )
         }
         composable("post_session") {
-            org.kinesis.logger.ui.summary.PostSessionPlaceholder(
+            val task = tasks.getOrNull(currentTaskIndex) ?: tasks.first()
+            PostSessionScreen(
+                task = task,
+                subjectId = currentSubjectId,
                 onDone = {
                     navController.popBackStack("dashboard", inclusive = false)
                 }
             )
         }
         composable("sessions") {
-            org.kinesis.logger.ui.sessions.SessionsPlaceholder(
+            SessionsScreen(
                 onBack = { navController.popBackStack() }
             )
         }
         composable("settings") {
-            org.kinesis.logger.ui.settings.SettingsPlaceholder(
+            SettingsScreen(
                 onBack = { navController.popBackStack() },
                 onNavigateToCoverage = { navController.navigate("coverage") }
             )
         }
         composable("coverage") {
-            org.kinesis.logger.ui.coverage.CoveragePlaceholder(
+            CoverageScreen(
                 onBack = { navController.popBackStack() }
             )
         }
