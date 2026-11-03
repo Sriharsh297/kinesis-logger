@@ -20,13 +20,33 @@ import org.kinesis.logger.ui.dashboard.DashboardScreen
 import org.kinesis.logger.ui.theme.BgDark
 import org.kinesis.logger.ui.theme.KinesisLoggerTheme
 
+import android.content.Intent
+import android.widget.Toast
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+import org.kinesis.logger.service.CrashRecoveryManager
+import org.kinesis.logger.service.RecordingService
+import org.kinesis.logger.ui.recording.RecordingScreen
+
 class MainActivity : ComponentActivity() {
 
     private lateinit var taskRepository: TaskRepository
+    private lateinit var crashRecoveryManager: CrashRecoveryManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         taskRepository = TaskRepository(applicationContext)
+        crashRecoveryManager = CrashRecoveryManager(applicationContext)
+
+        // Crash safety check on app launch per spec section 8
+        val recoveredSessionId = crashRecoveryManager.checkAndRecoverInterruptedSession()
+        if (recoveredSessionId != null) {
+            Toast.makeText(
+                this,
+                "Interrupted session recovered: $recoveredSessionId",
+                Toast.LENGTH_LONG
+            ).show()
+        }
 
         setContent {
             KinesisLoggerTheme {
@@ -34,7 +54,18 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = BgDark
                 ) {
-                    KinesisAppNavigation(taskRepository = taskRepository)
+                    KinesisAppNavigation(
+                        taskRepository = taskRepository,
+                        onStartService = { taskId, subjectId, plannedDurationS ->
+                            val intent = Intent(this, RecordingService::class.java).apply {
+                                action = RecordingService.ACTION_START
+                                putExtra(RecordingService.EXTRA_TASK_ID, taskId)
+                                putExtra(RecordingService.EXTRA_SUBJECT_ID, subjectId)
+                                putExtra(RecordingService.EXTRA_PLANNED_DURATION_S, plannedDurationS)
+                            }
+                            startService(intent)
+                        }
+                    )
                 }
             }
         }
@@ -43,7 +74,8 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun KinesisAppNavigation(
-    taskRepository: TaskRepository
+    taskRepository: TaskRepository,
+    onStartService: (taskId: String, subjectId: String, plannedDurationS: Int) -> Unit
 ) {
     val navController = rememberNavController()
     val tasks = remember { taskRepository.getTasks() }
@@ -64,19 +96,25 @@ fun KinesisAppNavigation(
             )
         }
         composable("preflight") {
-            // Pre-flight placeholder for navigation
+            val task = tasks.getOrNull(currentTaskIndex) ?: tasks.first()
             org.kinesis.logger.ui.preflight.PreFlightPlaceholder(
-                task = tasks.getOrNull(currentTaskIndex) ?: tasks.first(),
+                task = task,
                 subjectId = currentSubjectId,
                 onBack = { navController.popBackStack() },
-                onStartRecording = { navController.navigate("recording") }
+                onStartRecording = {
+                    onStartService(task.taskId, currentSubjectId, task.boutPlannedS)
+                    navController.navigate("recording")
+                }
             )
         }
         composable("recording") {
-            org.kinesis.logger.ui.recording.RecordingPlaceholder(
-                task = tasks.getOrNull(currentTaskIndex) ?: tasks.first(),
+            val task = tasks.getOrNull(currentTaskIndex) ?: tasks.first()
+            RecordingScreen(
+                task = task,
                 subjectId = currentSubjectId,
-                onFinishRecording = { navController.navigate("post_session") }
+                onFinishRecording = { sessionId ->
+                    navController.navigate("post_session")
+                }
             )
         }
         composable("post_session") {
