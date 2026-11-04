@@ -5,7 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+// Added import for weight and other layout utilities
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Share
@@ -35,15 +37,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.kinesis.logger.KinesisApplication
 import org.kinesis.logger.quality.SessionExporter
+import org.kinesis.logger.upload.UploadQueueManager
+import org.kinesis.logger.upload.UploadStatus
 import org.kinesis.logger.ui.components.KinesisCard
 import org.kinesis.logger.ui.components.KinesisSecondaryButton
 import org.kinesis.logger.ui.components.StatusBadge
 import org.kinesis.logger.ui.components.StatusLevel
 import org.kinesis.logger.ui.theme.BgDark
 import org.kinesis.logger.ui.theme.CyanBright
+import org.kinesis.logger.ui.theme.GreenSuccess
 import org.kinesis.logger.ui.theme.RedAlert
-import org.kinesis.logger.ui.theme.SurfaceDark
 import org.kinesis.logger.ui.theme.SurfaceElevated
 import org.kinesis.logger.ui.theme.TextMuted
 import org.kinesis.logger.ui.theme.TextPrimary
@@ -59,7 +64,7 @@ data class SessionItem(
     val dateString: String,
     val sizeMb: Double,
     val isInterrupted: Boolean,
-    val isExported: Boolean
+    val uploadStatus: UploadStatus
 )
 
 @Composable
@@ -68,6 +73,9 @@ fun SessionsScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val uploadQueue = remember {
+        (context.applicationContext as KinesisApplication).uploadQueue
+    }
     var sessions by remember { mutableStateOf<List<SessionItem>>(emptyList()) }
 
     fun refreshSessions() {
@@ -78,26 +86,23 @@ fun SessionsScreen(
                 val interrupted = File(dir, "interrupted.flag").exists()
                 val totalBytes = dir.walkTopDown().filter { it.isFile }.map { it.length() }.sum()
                 val sizeMb = (totalBytes / (1024.0 * 1024.0) * 10.0).toInt() / 10.0
-
                 val lastModified = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.US).format(Date(dir.lastModified()))
-
+                val uploadStatus = if (interrupted) UploadStatus.LOCAL
+                                   else uploadQueue.getStatus(dir)
                 SessionItem(
-                    directory = dir,
-                    sessionId = dir.name,
-                    dateString = lastModified,
-                    sizeMb = sizeMb,
+                    directory     = dir,
+                    sessionId     = dir.name,
+                    dateString    = lastModified,
+                    sizeMb        = sizeMb,
                     isInterrupted = interrupted,
-                    isExported = false
+                    uploadStatus  = uploadStatus
                 )
             }?.sortedByDescending { it.directory.lastModified() } ?: emptyList()
-
             sessions = items
         }
     }
 
-    LaunchedEffect(Unit) {
-        refreshSessions()
-    }
+    LaunchedEffect(Unit) { refreshSessions() }
 
     Column(
         modifier = modifier
@@ -122,10 +127,22 @@ fun SessionsScreen(
                     color = TextPrimary
                 )
                 Text(
-                    text = "${sessions.size} sessions stored locally",
+                    text = "${sessions.size} sessions — ${sessions.count { it.uploadStatus == UploadStatus.UPLOADED }} uploaded",
                     fontSize = 12.sp,
                     color = CyanBright
                 )
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            // Global upload pending button
+            IconButton(onClick = {
+                val baseDir = context.getExternalFilesDir(null) ?: context.filesDir
+                val rawDir = File(baseDir, "raw")
+                if (rawDir.exists()) {
+                    uploadQueue.drainQueue(rawDir)
+                }
+                Toast.makeText(context, "Queued pending uploads (Wi-Fi required)", Toast.LENGTH_SHORT).show()
+            }) {
+                Icon(Icons.Default.CloudUpload, contentDescription = "Upload all pending", tint = TextPrimary)
             }
         }
 
@@ -133,76 +150,49 @@ fun SessionsScreen(
 
         if (sessions.isEmpty()) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(32.dp),
+                modifier = Modifier.fillMaxSize().padding(32.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        imageVector = Icons.Default.Folder,
-                        contentDescription = null,
-                        tint = TextMuted,
-                        modifier = Modifier.size(64.dp)
-                    )
+                    Icon(imageVector = Icons.Default.Folder, contentDescription = null, tint = TextMuted, modifier = Modifier.size(64.dp))
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "No sessions recorded yet.",
-                        color = TextSecondary,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium
-                    )
+                    Text(text = "No sessions recorded yet.", color = TextSecondary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Complete a bout from the dashboard to log raw data.",
-                        color = TextMuted,
-                        fontSize = 13.sp
-                    )
+                    Text(text = "Complete a bout from the dashboard to log raw data.", color = TextMuted, fontSize = 13.sp)
                 }
             }
         } else {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(sessions, key = { it.sessionId }) { session ->
-                    KinesisCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        backgroundColor = SurfaceElevated
-                    ) {
+                    KinesisCard(modifier = Modifier.fillMaxWidth(), backgroundColor = SurfaceElevated) {
                         Column {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                StatusBadge(
-                                    text = if (session.isInterrupted) "INTERRUPTED" else "LOCAL",
-                                    level = if (session.isInterrupted) StatusLevel.WARN else StatusLevel.PASS
-                                )
-                                Text(
-                                    text = "${session.sizeMb} MB",
-                                    fontSize = 12.sp,
-                                    color = TextMuted,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                // Status badge
+                                val (badgeText, badgeLevel) = when {
+                                    session.isInterrupted                           -> "INTERRUPTED" to StatusLevel.WARN
+                                    session.uploadStatus == UploadStatus.UPLOADED   -> "UPLOADED" to StatusLevel.PASS
+                                    session.uploadStatus == UploadStatus.UPLOADING  -> "UPLOADING…" to StatusLevel.INFO
+                                    session.uploadStatus == UploadStatus.FAILED     -> "UPLOAD FAILED" to StatusLevel.FAIL
+                                    else                                            -> "LOCAL" to StatusLevel.INFO
+                                }
+                                StatusBadge(text = badgeText, level = badgeLevel)
+                                Text(text = "${session.sizeMb} MB", fontSize = 12.sp, color = TextMuted, fontWeight = FontWeight.Bold)
                             }
 
                             Spacer(modifier = Modifier.height(8.dp))
-
-                            Text(
-                                text = session.sessionId,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TextPrimary
-                            )
-
+                            Text(text = session.sessionId, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                             Spacer(modifier = Modifier.height(4.dp))
+                            Text(text = session.dateString, fontSize = 12.sp, color = TextSecondary)
 
-                            Text(
-                                text = session.dateString,
-                                fontSize = 12.sp,
-                                color = TextSecondary
-                            )
+                            // Upload failure note
+                            uploadQueue.getStatusNote(session.directory)?.let { note ->
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(text = note, fontSize = 11.sp, color = RedAlert)
+                            }
 
                             Spacer(modifier = Modifier.height(12.dp))
 
@@ -211,18 +201,28 @@ fun SessionsScreen(
                                 horizontalArrangement = Arrangement.End,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                IconButton(
-                                    onClick = {
-                                        session.directory.deleteRecursively()
+                                // Upload / Retry button (only when not yet uploaded)
+                                if (session.uploadStatus != UploadStatus.UPLOADED && !session.isInterrupted) {
+                                    IconButton(onClick = {
+                                        uploadQueue.enqueue(session.directory)
                                         refreshSessions()
-                                        Toast.makeText(context, "Session deleted", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "Upload queued (Wi-Fi required)", Toast.LENGTH_SHORT).show()
+                                    }) {
+                                        Icon(
+                                            imageVector = Icons.Default.CloudUpload,
+                                            contentDescription = "Upload to S3",
+                                            tint = CyanBright
+                                        )
                                     }
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Delete,
-                                        contentDescription = "Delete",
-                                        tint = RedAlert.copy(alpha = 0.8f)
-                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                }
+
+                                IconButton(onClick = {
+                                    session.directory.deleteRecursively()
+                                    refreshSessions()
+                                    Toast.makeText(context, "Session deleted", Toast.LENGTH_SHORT).show()
+                                }) {
+                                    Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete", tint = RedAlert.copy(alpha = 0.8f))
                                 }
 
                                 Spacer(modifier = Modifier.width(8.dp))

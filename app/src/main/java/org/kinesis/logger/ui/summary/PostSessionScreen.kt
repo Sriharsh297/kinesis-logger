@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.kinesis.logger.KinesisApplication
 import org.kinesis.logger.model.Task
 import org.kinesis.logger.quality.ManifestGenerator
 import org.kinesis.logger.quality.QualityCalculator
@@ -437,8 +438,12 @@ fun PostSessionScreen(
                         // Refresh manifest including session.json
                         ManifestGenerator.generateManifest(sessionDir)
 
+                        // Enqueue Wi-Fi upload (non-blocking, background coroutine)
+                        val app = context.applicationContext as KinesisApplication
+                        app.uploadQueue.enqueue(sessionDir)
+
                         withContext(Dispatchers.Main) {
-                            Toast.makeText(context, "Session saved successfully", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Session saved — uploading on Wi-Fi", Toast.LENGTH_SHORT).show()
                             onDone()
                         }
                     } catch (e: Exception) {
