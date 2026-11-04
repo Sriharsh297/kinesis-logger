@@ -85,7 +85,7 @@ fun DashboardScreen(
     var newSubjectInput by remember { mutableStateOf("") }
 
     val subjects = remember {
-        mutableListOf("S01", "S02", "S03", "S04", "S05", "S06", "S07", "S08", "S09", "S10", "S11", "S12")
+        mutableListOf("S01", "S02", "S03", "S04", "S05", "S06")
     }
 
     val currentTask = tasks.getOrNull(currentTaskIndex) ?: tasks.firstOrNull()
