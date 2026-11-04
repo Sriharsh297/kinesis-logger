@@ -14,7 +14,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -29,7 +31,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -53,14 +54,11 @@ import org.kinesis.logger.quality.QualityCalculator
 import org.kinesis.logger.quality.QualityReport
 import org.kinesis.logger.quality.SessionJsonBuilder
 import org.kinesis.logger.quality.SessionSaveParams
-import org.kinesis.logger.recorder.SessionWriter
 import org.kinesis.logger.service.RecordingService
 import org.kinesis.logger.ui.components.KinesisCard
 import org.kinesis.logger.ui.components.KinesisDangerButton
 import org.kinesis.logger.ui.components.KinesisPrimaryButton
 import org.kinesis.logger.ui.components.MetricChip
-import org.kinesis.logger.ui.components.StatusBadge
-import org.kinesis.logger.ui.components.StatusLevel
 import org.kinesis.logger.ui.theme.AmberWarning
 import org.kinesis.logger.ui.theme.BgDark
 import org.kinesis.logger.ui.theme.CardBorder
@@ -89,7 +87,6 @@ fun PostSessionScreen(
     val service = RecordingService.instance
 
     val sessionWriter = service?.sessionWriter
-    val sensorRecorder = service?.sensorRecorder
     val sessionDir = sessionWriter?.sessionDir ?: run {
         val baseDir = context.getExternalFilesDir(null) ?: context.filesDir
         File(File(baseDir, "raw"), "latest")
@@ -151,29 +148,35 @@ fun PostSessionScreen(
         modifier = modifier
             .fillMaxSize()
             .background(BgDark)
-            .padding(horizontal = 20.dp, vertical = 16.dp)
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .padding(horizontal = 20.dp, vertical = 12.dp)
             .verticalScroll(scrollState)
     ) {
-        Text(
-            text = "SESSION SUMMARY",
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Black,
-            color = TextPrimary,
-            letterSpacing = 1.sp
-        )
-        Text(
-            text = sessionDir.name,
-            fontSize = 12.sp,
-            color = CyanBright,
-            fontWeight = FontWeight.SemiBold
-        )
+        Column(modifier = Modifier.padding(vertical = 4.dp)) {
+            Text(
+                text = "SESSION SUMMARY",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary,
+                letterSpacing = 0.5.sp
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = sessionDir.name,
+                fontSize = 12.sp,
+                color = CyanPrimary,
+                fontWeight = FontWeight.Medium
+            )
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         // Quality Metrics Grid
         KinesisCard(
             modifier = Modifier.fillMaxWidth(),
-            backgroundColor = SurfaceElevated
+            backgroundColor = SurfaceDark,
+            borderColor = CardBorder
         ) {
             Column {
                 Text(
@@ -181,14 +184,14 @@ fun PostSessionScreen(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextMuted,
-                    letterSpacing = 1.sp
+                    letterSpacing = 0.8.sp
                 )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     MetricChip(
                         label = "Duration",
@@ -204,11 +207,11 @@ fun PostSessionScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     MetricChip(
                         label = "Accel Rate",
@@ -226,11 +229,11 @@ fun PostSessionScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     MetricChip(
                         label = "GPS Fix Pct",
@@ -254,7 +257,7 @@ fun PostSessionScreen(
         if (task.boutType == "counted") {
             KinesisCard(
                 modifier = Modifier.fillMaxWidth(),
-                backgroundColor = Color(0xFF1E2235),
+                backgroundColor = SurfaceDark,
                 borderColor = CyanPrimary
             ) {
                 Column {
@@ -282,7 +285,8 @@ fun PostSessionScreen(
                             focusedBorderColor = CyanPrimary,
                             unfocusedBorderColor = CardBorder,
                             focusedTextColor = TextPrimary,
-                            unfocusedTextColor = TextPrimary
+                            unfocusedTextColor = TextPrimary,
+                            cursorColor = CyanPrimary
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -294,7 +298,8 @@ fun PostSessionScreen(
         // Session OK Question
         KinesisCard(
             modifier = Modifier.fillMaxWidth(),
-            backgroundColor = SurfaceElevated
+            backgroundColor = SurfaceDark,
+            borderColor = CardBorder
         ) {
             Column {
                 Text(
@@ -303,7 +308,7 @@ fun PostSessionScreen(
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -314,6 +319,7 @@ fun PostSessionScreen(
                             onClick = { sessionOk = true },
                             colors = RadioButtonDefaults.colors(selectedColor = CyanPrimary)
                         )
+                        Spacer(modifier = Modifier.width(4.dp))
                         Text("Yes (Session OK)", color = TextPrimary, fontSize = 14.sp)
                     }
 
@@ -328,6 +334,7 @@ fun PostSessionScreen(
                             onClick = { sessionOk = false },
                             colors = RadioButtonDefaults.colors(selectedColor = RedAlert)
                         )
+                        Spacer(modifier = Modifier.width(4.dp))
                         Text("No (Discard)", color = TextPrimary, fontSize = 14.sp)
                     }
                 }
@@ -346,8 +353,8 @@ fun PostSessionScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(Shapes.small)
-                                .background(SurfaceDark)
-                                .border(1.dp, RedAlert.copy(alpha = 0.5f), Shapes.small)
+                                .background(SurfaceElevated)
+                                .border(1.dp, RedAlert.copy(alpha = 0.4f), Shapes.small)
                                 .clickable { discardDropdownExpanded = true }
                                 .padding(12.dp)
                         ) {
@@ -389,12 +396,13 @@ fun PostSessionScreen(
                 focusedBorderColor = CyanPrimary,
                 unfocusedBorderColor = CardBorder,
                 focusedTextColor = TextPrimary,
-                unfocusedTextColor = TextPrimary
+                unfocusedTextColor = TextPrimary,
+                cursorColor = CyanPrimary
             ),
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         // Save & Export Action
         KinesisPrimaryButton(
@@ -475,5 +483,7 @@ fun PostSessionScreen(
             },
             modifier = Modifier.fillMaxWidth()
         )
+
+        Spacer(modifier = Modifier.height(8.dp))
     }
 }

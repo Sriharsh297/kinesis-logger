@@ -10,12 +10,16 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -30,8 +34,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.kinesis.logger.ui.components.KinesisCard
-import org.kinesis.logger.ui.components.StatusBadge
-import org.kinesis.logger.ui.components.StatusLevel
 import org.kinesis.logger.ui.theme.BgDark
 import org.kinesis.logger.ui.theme.BlueAccent
 import org.kinesis.logger.ui.theme.CardBorder
@@ -99,30 +101,53 @@ fun CoverageScreen(
         modifier = modifier
             .fillMaxSize()
             .background(BgDark)
-            .padding(horizontal = 20.dp, vertical = 16.dp)
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .padding(horizontal = 20.dp, vertical = 12.dp)
             .verticalScroll(scrollState)
     ) {
-        // App Bar
+        // App Bar with 48dp touch targets
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = TextPrimary)
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier.size(48.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(SurfaceDark)
+                        .border(1.dp, CardBorder, RoundedCornerShape(10.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = TextPrimary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(12.dp))
             Column {
                 Text(
                     text = "DATASET COVERAGE",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TextPrimary
+                    color = TextPrimary,
+                    letterSpacing = 0.5.sp
                 )
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "TARGET: 55.0 HOURS (v0.5 MILESTONE)",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = CyanBright
+                    text = "Target: 55.0 Hours • v0.5 Milestone",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = TextSecondary
                 )
             }
         }
@@ -132,7 +157,8 @@ fun CoverageScreen(
         // Overall Progress Hero
         KinesisCard(
             modifier = Modifier.fillMaxWidth(),
-            backgroundColor = SurfaceElevated
+            backgroundColor = SurfaceDark,
+            borderColor = CardBorder
         ) {
             Column {
                 Row(
@@ -145,7 +171,7 @@ fun CoverageScreen(
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextMuted,
-                        letterSpacing = 1.sp
+                        letterSpacing = 0.8.sp
                     )
                     Text(
                         text = "$totalCollected / $totalTarget hrs",
@@ -155,7 +181,7 @@ fun CoverageScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 LinearProgressIndicator(
                     progress = { overallProgress },
@@ -164,20 +190,21 @@ fun CoverageScreen(
                         .height(8.dp)
                         .clip(Shapes.small),
                     color = CyanPrimary,
-                    trackColor = CardBorder
+                    trackColor = SurfaceElevated
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Text(
                     text = "Rule: Zero wrong cards. Every subject records genuine and fraud data on 2 different days.",
-                    fontSize = 11.sp,
-                    color = TextSecondary
+                    fontSize = 12.sp,
+                    color = TextSecondary,
+                    lineHeight = 16.sp
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(18.dp))
 
         // Family Breakdown: GENUINE
         CoverageFamilySection(
@@ -186,7 +213,7 @@ fun CoverageScreen(
             items = genuineItems
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
         // Family Breakdown: BENIGN NON-WALK
         CoverageFamilySection(
@@ -195,7 +222,7 @@ fun CoverageScreen(
             items = benignItems
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
         // Family Breakdown: FRAUD
         CoverageFamilySection(
@@ -203,6 +230,8 @@ fun CoverageScreen(
             badgeColor = RedAlert,
             items = fraudItems
         )
+
+        Spacer(modifier = Modifier.height(8.dp))
     }
 }
 
@@ -215,7 +244,7 @@ private fun CoverageFamilySection(
     Column {
         Text(
             text = familyName,
-            fontSize = 13.sp,
+            fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
             color = badgeColor,
             letterSpacing = 0.5.sp
@@ -225,9 +254,10 @@ private fun CoverageFamilySection(
 
         KinesisCard(
             modifier = Modifier.fillMaxWidth(),
-            backgroundColor = SurfaceElevated
+            backgroundColor = SurfaceDark,
+            borderColor = CardBorder
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 items.forEach { item ->
                     val progress = (item.collectedHours / item.targetHours).toFloat().coerceIn(0f, 1f)
                     Column {
@@ -237,26 +267,26 @@ private fun CoverageFamilySection(
                         ) {
                             Text(
                                 text = "${item.code}: ${item.name}",
-                                fontSize = 12.sp,
+                                fontSize = 13.sp,
                                 color = TextPrimary,
                                 fontWeight = FontWeight.Medium
                             )
                             Text(
                                 text = "${item.collectedHours} / ${item.targetHours} h",
-                                fontSize = 11.sp,
+                                fontSize = 12.sp,
                                 color = TextSecondary,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
                         LinearProgressIndicator(
                             progress = { progress },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(5.dp)
+                                .height(6.dp)
                                 .clip(Shapes.small),
                             color = badgeColor,
-                            trackColor = CardBorder
+                            trackColor = SurfaceElevated
                         )
                     }
                 }

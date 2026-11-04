@@ -3,6 +3,7 @@ package org.kinesis.logger
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -39,6 +40,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var crashRecoveryManager: CrashRecoveryManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         taskRepository = TaskRepository(applicationContext)
         crashRecoveryManager = CrashRecoveryManager(applicationContext)

@@ -1,7 +1,6 @@
 package org.kinesis.logger.ui.theme
 
 import android.app.Activity
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
@@ -35,7 +34,6 @@ private val DarkColorScheme = darkColorScheme(
 fun KinesisLoggerTheme(
     content: @Composable () -> Unit
 ) {
-    val colorScheme = DarkColorScheme
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
@@ -51,7 +49,7 @@ fun KinesisLoggerTheme(
     }
 
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = DarkColorScheme,
         typography = Typography,
         shapes = Shapes,
         content = content

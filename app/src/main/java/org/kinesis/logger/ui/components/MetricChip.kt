@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,7 +34,7 @@ fun MetricChip(
             .clip(Shapes.small)
             .background(SurfaceElevated)
             .border(1.dp, CardBorder, Shapes.small)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.Center
     ) {
         Text(
@@ -40,11 +42,12 @@ fun MetricChip(
             fontSize = 10.sp,
             fontWeight = FontWeight.SemiBold,
             color = TextMuted,
-            letterSpacing = 0.5.sp
+            letterSpacing = 0.6.sp
         )
+        Spacer(modifier = Modifier.height(3.dp))
         Text(
             text = if (unit != null) "$value $unit" else value,
-            fontSize = 15.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             color = valueColor
         )

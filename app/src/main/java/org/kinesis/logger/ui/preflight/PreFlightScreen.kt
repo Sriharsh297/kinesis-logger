@@ -8,7 +8,6 @@ import android.location.LocationManager
 import android.net.Uri
 import android.os.BatteryManager
 import android.os.Build
-import android.os.Environment
 import android.os.PowerManager
 import android.os.StatFs
 import android.provider.Settings
@@ -22,34 +21,32 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BatteryFull
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.Sensors
 import androidx.compose.material.icons.filled.Storage
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.SwapCalls
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -63,19 +60,22 @@ import org.kinesis.logger.ui.components.KinesisSecondaryButton
 import org.kinesis.logger.ui.components.StatusBadge
 import org.kinesis.logger.ui.components.StatusLevel
 import org.kinesis.logger.ui.theme.AmberWarning
+import org.kinesis.logger.ui.theme.AmberWarningBg
 import org.kinesis.logger.ui.theme.BgDark
+import org.kinesis.logger.ui.theme.BlueAccent
+import org.kinesis.logger.ui.theme.BlueAccentBg
 import org.kinesis.logger.ui.theme.CardBorder
-import org.kinesis.logger.ui.theme.CyanBright
 import org.kinesis.logger.ui.theme.CyanPrimary
 import org.kinesis.logger.ui.theme.GreenSuccess
+import org.kinesis.logger.ui.theme.GreenSuccessBg
 import org.kinesis.logger.ui.theme.RedAlert
+import org.kinesis.logger.ui.theme.RedAlertBg
 import org.kinesis.logger.ui.theme.Shapes
 import org.kinesis.logger.ui.theme.SurfaceDark
 import org.kinesis.logger.ui.theme.SurfaceElevated
 import org.kinesis.logger.ui.theme.TextMuted
 import org.kinesis.logger.ui.theme.TextPrimary
 import org.kinesis.logger.ui.theme.TextSecondary
-import java.io.File
 
 @Composable
 fun PreFlightScreen(
@@ -107,7 +107,7 @@ fun PreFlightScreen(
         try {
             val stat = StatFs(context.getExternalFilesDir(null)?.path ?: context.filesDir.path)
             (stat.availableBlocksLong * stat.blockSizeLong) / (1024 * 1024)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             1000L
         }
     }
@@ -137,34 +137,53 @@ fun PreFlightScreen(
         modifier = modifier
             .fillMaxSize()
             .background(BgDark)
-            .padding(horizontal = 20.dp, vertical = 16.dp)
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .padding(horizontal = 20.dp, vertical = 12.dp)
             .verticalScroll(scrollState)
     ) {
-        // Top Bar
+        // Top App Bar with 48dp touch target back button
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onBack) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "Back",
-                    tint = TextPrimary
-                )
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier.size(48.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(SurfaceDark)
+                        .border(1.dp, CardBorder, RoundedCornerShape(10.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = TextPrimary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(12.dp))
             Column {
                 Text(
                     text = "PRE-FLIGHT CHECK",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TextPrimary
+                    color = TextPrimary,
+                    letterSpacing = 0.5.sp
                 )
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "PROTOCOL VALIDATION • ${task.taskId} ($subjectId)",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = CyanBright
+                    text = "Protocol Validation • ${task.taskId} ($subjectId)",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = TextSecondary
                 )
             }
         }
@@ -176,38 +195,66 @@ fun PreFlightScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0x33EF4444), Shapes.medium)
-                    .border(1.dp, RedAlert, Shapes.medium)
+                    .clip(Shapes.medium)
+                    .background(RedAlertBg)
+                    .border(1.dp, RedAlert.copy(alpha = 0.4f), Shapes.medium)
                     .padding(14.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Error, contentDescription = null, tint = RedAlert)
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = "PRE-FLIGHT BLOCKED: Missing critical sensors or free storage is under 500 MB.",
-                        color = RedAlert,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold
+                    Icon(
+                        imageVector = Icons.Default.Error,
+                        contentDescription = null,
+                        tint = RedAlert,
+                        modifier = Modifier.size(24.dp)
                     )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = "PRE-FLIGHT BLOCKED",
+                            color = RedAlert,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Missing critical sensors or free storage is under 500 MB.",
+                            color = TextSecondary,
+                            fontSize = 12.sp
+                        )
+                    }
                 }
             }
         } else {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0x2210B981), Shapes.medium)
-                    .border(1.dp, GreenSuccess.copy(alpha = 0.5f), Shapes.medium)
+                    .clip(Shapes.medium)
+                    .background(GreenSuccessBg)
+                    .border(1.dp, GreenSuccess.copy(alpha = 0.35f), Shapes.medium)
                     .padding(14.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = GreenSuccess)
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = "INSTRUMENT READY: Hardware and environment meet protocol specifications.",
-                        color = GreenSuccess,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        tint = GreenSuccess,
+                        modifier = Modifier.size(24.dp)
                     )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = "INSTRUMENT READY",
+                            color = GreenSuccess,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Hardware and environment meet protocol specifications.",
+                            color = TextSecondary,
+                            fontSize = 12.sp
+                        )
+                    }
                 }
             }
         }
@@ -216,6 +263,7 @@ fun PreFlightScreen(
 
         // Check Items
         CheckItemCard(
+            icon = Icons.Default.Sensors,
             title = "Accelerometer (100 Hz)",
             detail = if (hasAccel) "Hardware present • 10,000 µs target period" else "CRITICAL: Sensor missing",
             level = if (hasAccel) StatusLevel.PASS else StatusLevel.FAIL
@@ -224,6 +272,7 @@ fun PreFlightScreen(
         Spacer(modifier = Modifier.height(10.dp))
 
         CheckItemCard(
+            icon = Icons.Default.Sensors,
             title = "Gyroscope (100 Hz)",
             detail = if (hasGyro) "Hardware present • 10,000 µs target period" else "CRITICAL: Sensor missing",
             level = if (hasGyro) StatusLevel.PASS else StatusLevel.FAIL
@@ -232,6 +281,7 @@ fun PreFlightScreen(
         Spacer(modifier = Modifier.height(10.dp))
 
         CheckItemCard(
+            icon = Icons.Default.Sensors,
             title = "Step Sensors",
             detail = "Detector: ${if (hasStepDetector) "Available" else "Absent"} • Counter: ${if (hasStepCounter) "Available" else "Absent"}",
             level = if (hasStepDetector && hasStepCounter) StatusLevel.PASS else StatusLevel.WARN
@@ -240,6 +290,7 @@ fun PreFlightScreen(
         Spacer(modifier = Modifier.height(10.dp))
 
         CheckItemCard(
+            icon = Icons.Default.LocationOn,
             title = "GPS Provider & Location",
             detail = if (isGpsEnabled) "GPS Provider enabled • 1 Hz Fused + 1 Hz Raw" else "GPS disabled in system settings",
             level = if (isGpsEnabled) StatusLevel.PASS else StatusLevel.WARN
@@ -248,6 +299,7 @@ fun PreFlightScreen(
         Spacer(modifier = Modifier.height(10.dp))
 
         CheckItemCard(
+            icon = Icons.Default.Storage,
             title = "Internal / External Storage",
             detail = "$freeStorageMb MB free space (Minimum 500 MB required)",
             level = if (freeStorageMb >= 500) StatusLevel.PASS else StatusLevel.FAIL
@@ -256,6 +308,7 @@ fun PreFlightScreen(
         Spacer(modifier = Modifier.height(10.dp))
 
         CheckItemCard(
+            icon = Icons.Default.BatteryFull,
             title = "Battery Level",
             detail = "$batteryPct% remaining (Protocol recommends > 30%)",
             level = if (batteryPct >= 30) StatusLevel.PASS else StatusLevel.WARN
@@ -264,6 +317,7 @@ fun PreFlightScreen(
         Spacer(modifier = Modifier.height(10.dp))
 
         CheckItemCard(
+            icon = Icons.Default.SwapCalls,
             title = "Mock Location Status",
             detail = if (isMockExpected) "Mock mode expected for task ${task.labelType}" else "Real hardware coordinates expected",
             level = StatusLevel.INFO
@@ -272,6 +326,7 @@ fun PreFlightScreen(
         Spacer(modifier = Modifier.height(10.dp))
 
         CheckItemCard(
+            icon = Icons.Default.PowerSettingsNew,
             title = "Battery Optimization",
             detail = if (isBatteryOptimized) "Optimized (May kill background recording)" else "Unrestricted (Safe for background logging)",
             level = if (isBatteryOptimized) StatusLevel.WARN else StatusLevel.PASS,
@@ -286,20 +341,23 @@ fun PreFlightScreen(
             }
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
-        // Start 10s Countdown Button
+        // Start Countdown Button
         KinesisPrimaryButton(
             text = "START RECORDING (10s COUNTDOWN)",
             onClick = onStartRecording,
             enabled = !isCriticalFailure,
             modifier = Modifier.fillMaxWidth()
         )
+
+        Spacer(modifier = Modifier.height(8.dp))
     }
 }
 
 @Composable
 private fun CheckItemCard(
+    icon: ImageVector,
     title: String,
     detail: String,
     level: StatusLevel,
@@ -307,29 +365,62 @@ private fun CheckItemCard(
     actionLabel: String? = null,
     onAction: (() -> Unit)? = null
 ) {
+    val iconTint = when (level) {
+        StatusLevel.PASS -> GreenSuccess
+        StatusLevel.WARN -> AmberWarning
+        StatusLevel.FAIL -> RedAlert
+        StatusLevel.INFO -> BlueAccent
+    }
+    val iconBg = when (level) {
+        StatusLevel.PASS -> GreenSuccessBg
+        StatusLevel.WARN -> AmberWarningBg
+        StatusLevel.FAIL -> RedAlertBg
+        StatusLevel.INFO -> BlueAccentBg
+    }
+
     KinesisCard(
         modifier = modifier.fillMaxWidth(),
-        backgroundColor = SurfaceElevated
+        backgroundColor = SurfaceDark,
+        borderColor = CardBorder
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(iconBg),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = iconTint,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
                     color = TextPrimary
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = detail,
                     fontSize = 12.sp,
-                    color = TextSecondary
+                    color = TextSecondary,
+                    lineHeight = 16.sp
                 )
             }
+
+            Spacer(modifier = Modifier.width(8.dp))
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (actionLabel != null && onAction != null) {

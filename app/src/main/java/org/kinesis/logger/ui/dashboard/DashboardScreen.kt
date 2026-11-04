@@ -12,32 +12,29 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -96,7 +93,7 @@ fun DashboardScreen(
     val phoneModel = remember {
         val manufacturer = Build.MANUFACTURER.replaceFirstChar { it.uppercase() }
         val model = Build.MODEL
-        "$manufacturer $model (API ${Build.VERSION.SDK_INT})"
+        "$manufacturer $model (Android ${Build.VERSION.RELEASE})"
     }
 
     val scrollState = rememberScrollState()
@@ -105,12 +102,16 @@ fun DashboardScreen(
         modifier = modifier
             .fillMaxSize()
             .background(BgDark)
-            .padding(horizontal = 20.dp, vertical = 16.dp)
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .padding(horizontal = 20.dp, vertical = 12.dp)
             .verticalScroll(scrollState)
     ) {
-        // App Bar / Branding
+        // App Bar / Clean Branding
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -118,53 +119,81 @@ fun DashboardScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = "KINESIS",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Black,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
                         color = TextPrimary,
                         letterSpacing = 1.sp
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "LOGGER",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.SemiBold,
                         color = CyanPrimary,
                         letterSpacing = 1.sp
                     )
                 }
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "RESEARCH INSTRUMENT v0.1",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = TextMuted,
-                    letterSpacing = 1.5.sp
+                    text = "Research Instrument • Protocol v0.1",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = TextSecondary
                 )
             }
 
-            Row {
-                IconButton(onClick = onNavigateToSessions) {
-                    Icon(
-                        imageVector = Icons.Default.Folder,
-                        contentDescription = "Sessions",
-                        tint = CyanBright
-                    )
+            // Top action buttons with accessible 48dp touch targets
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                IconButton(
+                    onClick = onNavigateToSessions,
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(SurfaceDark)
+                            .border(1.dp, CardBorder, RoundedCornerShape(10.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Folder,
+                            contentDescription = "Sessions",
+                            tint = CyanPrimary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
-                IconButton(onClick = onNavigateToSettings) {
-                    Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = "Settings",
-                        tint = TextSecondary
-                    )
+
+                IconButton(
+                    onClick = onNavigateToSettings,
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(SurfaceDark)
+                            .border(1.dp, CardBorder, RoundedCornerShape(10.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Settings",
+                            tint = TextSecondary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        // Device & Subject Card
+        // Subject & Device Card
         KinesisCard(
             modifier = Modifier.fillMaxWidth(),
-            backgroundColor = SurfaceElevated
+            backgroundColor = SurfaceDark
         ) {
             Column {
                 Row(
@@ -174,24 +203,24 @@ fun DashboardScreen(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "Subject:",
+                            text = "Subject ID:",
                             color = TextSecondary,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
                         Box {
                             Box(
                                 modifier = Modifier
                                     .clip(Shapes.small)
-                                    .background(SurfaceDark)
+                                    .background(SurfaceElevated)
                                     .border(1.dp, CardBorder, Shapes.small)
                                     .clickable { subjectDropdownExpanded = true }
-                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                                    .padding(horizontal = 12.dp, vertical = 7.dp)
                             ) {
                                 Text(
-                                    text = "$currentSubjectId ▼",
-                                    color = CyanBright,
+                                    text = "$currentSubjectId  ▼",
+                                    color = CyanPrimary,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -203,7 +232,7 @@ fun DashboardScreen(
                             ) {
                                 subjects.forEach { subId ->
                                     DropdownMenuItem(
-                                        text = { Text(subId) },
+                                        text = { Text(subId, fontWeight = FontWeight.SemiBold) },
                                         onClick = {
                                             onSubjectIdChange(subId)
                                             subjectDropdownExpanded = false
@@ -216,7 +245,7 @@ fun DashboardScreen(
 
                     TextButton(
                         onClick = { showNewSubjectDialog = true },
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp)
+                        modifier = Modifier.height(44.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Add,
@@ -243,63 +272,50 @@ fun DashboardScreen(
                         imageVector = Icons.Default.PhoneAndroid,
                         contentDescription = null,
                         tint = TextMuted,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(15.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = phoneModel,
                         color = TextMuted,
                         fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Normal
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
         // Main Task Card
         if (currentTask != null) {
-            val familyLevel = when (currentTask.labelFamily) {
-                "GENUINE_MOVEMENT" -> StatusLevel.PASS
-                "BENIGN_NON_WALK" -> StatusLevel.INFO
-                "FRAUD" -> StatusLevel.FAIL
-                else -> StatusLevel.WARN
+            val (familyBadgeText, familyLevel) = when (currentTask.labelFamily) {
+                "GENUINE_MOVEMENT" -> "GENUINE MOVEMENT" to StatusLevel.PASS
+                "BENIGN_NON_WALK" -> "BENIGN NON-WALK" to StatusLevel.INFO
+                "FRAUD" -> "FRAUD ATTACK" to StatusLevel.FAIL
+                else -> currentTask.labelFamily to StatusLevel.WARN
             }
 
             KinesisCard(
                 modifier = Modifier.fillMaxWidth(),
                 backgroundColor = SurfaceDark,
-                borderColor = when (currentTask.labelFamily) {
-                    "FRAUD" -> RedAlert.copy(alpha = 0.5f)
-                    "GENUINE_MOVEMENT" -> CyanPrimary.copy(alpha = 0.4f)
-                    else -> CardBorder
-                }
+                borderColor = CardBorder
             ) {
                 Column {
-                    // Task ID and Counter
+                    // Category Badge and Counter
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = currentTask.taskId,
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Black,
-                                color = TextPrimary
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            StatusBadge(
-                                text = currentTask.labelFamily.replace("_", " "),
-                                level = familyLevel
-                            )
-                        }
+                        StatusBadge(
+                            text = familyBadgeText,
+                            level = familyLevel
+                        )
 
                         Text(
-                            text = "(${currentTaskIndex + 1} of ${tasks.size})",
-                            fontSize = 13.sp,
+                            text = "${currentTaskIndex + 1} of ${tasks.size}",
+                            fontSize = 12.sp,
                             color = TextMuted,
                             fontWeight = FontWeight.Medium
                         )
@@ -307,12 +323,29 @@ fun DashboardScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    Text(
-                        text = currentTask.title,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary
-                    )
+                    // Task ID + Title
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = currentTask.taskId,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = CyanPrimary
+                        )
+                        Text(
+                            text = "—",
+                            fontSize = 16.sp,
+                            color = TextMuted
+                        )
+                        Text(
+                            text = currentTask.title,
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = TextPrimary
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(6.dp))
 
@@ -320,7 +353,7 @@ fun DashboardScreen(
                         text = currentTask.description,
                         fontSize = 13.sp,
                         color = TextSecondary,
-                        lineHeight = 18.sp
+                        lineHeight = 19.sp
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -328,7 +361,7 @@ fun DashboardScreen(
                     // Detail Metrics Grid
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         MetricChip(
                             label = "Placement",
@@ -342,11 +375,11 @@ fun DashboardScreen(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         MetricChip(
                             label = "Environment",
@@ -369,6 +402,7 @@ fun DashboardScreen(
                             .fillMaxWidth()
                             .clip(Shapes.small)
                             .background(SurfaceElevated)
+                            .border(1.dp, CardBorder, Shapes.small)
                             .padding(12.dp)
                     ) {
                         Column {
@@ -395,9 +429,9 @@ fun DashboardScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(Shapes.small)
-                                .background(Color(0x22F59E0B))
-                                .border(1.dp, AmberWarning.copy(alpha = 0.4f), Shapes.small)
-                                .padding(10.dp),
+                                .background(AmberWarning.copy(alpha = 0.15f))
+                                .border(1.dp, AmberWarning.copy(alpha = 0.35f), Shapes.small)
+                                .padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
@@ -411,13 +445,13 @@ fun DashboardScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Prev / Next Navigation Controls
+                    // Prev / Next Navigation Controls with 48dp minimum height
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         KinesisSecondaryButton(
-                            text = "◀ Prev",
+                            text = "◀ Previous",
                             onClick = {
                                 if (currentTaskIndex > 0) {
                                     onTaskIndexChange(currentTaskIndex - 1)
@@ -442,14 +476,16 @@ fun DashboardScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        // Pre-Flight Check Action Button
+        // Pre-Flight Check Action Button with restrained cyan-to-blue gradient
         KinesisPrimaryButton(
             text = "PROCEED TO PRE-FLIGHT CHECK",
             onClick = onNavigateToPreFlight,
             modifier = Modifier.fillMaxWidth()
         )
+
+        Spacer(modifier = Modifier.height(8.dp))
     }
 
     // New Subject Dialog
@@ -475,7 +511,8 @@ fun DashboardScreen(
                             focusedBorderColor = CyanPrimary,
                             unfocusedBorderColor = CardBorder,
                             focusedTextColor = TextPrimary,
-                            unfocusedTextColor = TextPrimary
+                            unfocusedTextColor = TextPrimary,
+                            cursorColor = CyanPrimary
                         ),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
@@ -485,7 +522,10 @@ fun DashboardScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End
                     ) {
-                        TextButton(onClick = { showNewSubjectDialog = false }) {
+                        TextButton(
+                            onClick = { showNewSubjectDialog = false },
+                            modifier = Modifier.height(44.dp)
+                        ) {
                             Text("Cancel", color = TextSecondary)
                         }
                         Spacer(modifier = Modifier.width(8.dp))
@@ -499,7 +539,8 @@ fun DashboardScreen(
                                     newSubjectInput = ""
                                     showNewSubjectDialog = false
                                 }
-                            }
+                            },
+                            modifier = Modifier.height(44.dp)
                         ) {
                             Text("Add", color = CyanPrimary, fontWeight = FontWeight.Bold)
                         }

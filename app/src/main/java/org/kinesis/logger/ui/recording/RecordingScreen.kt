@@ -1,6 +1,5 @@
 package org.kinesis.logger.ui.recording
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -13,20 +12,16 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Flag
-import androidx.compose.material.icons.filled.PinDrop
-import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -46,6 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.kinesis.logger.model.Task
 import org.kinesis.logger.service.LiveRecordingHud
 import org.kinesis.logger.service.RecordingPhase
@@ -62,15 +58,11 @@ import org.kinesis.logger.ui.theme.CardBorder
 import org.kinesis.logger.ui.theme.CyanBright
 import org.kinesis.logger.ui.theme.CyanPrimary
 import org.kinesis.logger.ui.theme.GreenSuccess
-import org.kinesis.logger.ui.theme.RedAlert
-import org.kinesis.logger.ui.theme.Shapes
 import org.kinesis.logger.ui.theme.SurfaceDark
 import org.kinesis.logger.ui.theme.SurfaceElevated
 import org.kinesis.logger.ui.theme.TextMuted
 import org.kinesis.logger.ui.theme.TextPrimary
 import org.kinesis.logger.ui.theme.TextSecondary
-
-import kotlinx.coroutines.flow.MutableStateFlow
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -95,7 +87,9 @@ fun RecordingScreen(
         modifier = modifier
             .fillMaxSize()
             .background(BgDark)
-            .padding(horizontal = 20.dp, vertical = 16.dp)
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .padding(horizontal = 20.dp, vertical = 12.dp)
             .verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -110,7 +104,9 @@ fun RecordingScreen(
         }
 
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -118,17 +114,17 @@ fun RecordingScreen(
             Text(
                 text = "$subjectId • ${task.taskId}",
                 fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = TextSecondary
             )
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         // Large Elapsed Digital Timer
         Box(
             modifier = Modifier
-                .size(230.dp)
+                .size(220.dp)
                 .clip(CircleShape)
                 .background(SurfaceDark)
                 .border(
@@ -145,16 +141,17 @@ fun RecordingScreen(
                 ) {
                     Text(
                         text = "${hudState.phaseRemainingSeconds}",
-                        fontSize = 72.sp,
-                        fontWeight = FontWeight.Black,
+                        fontSize = 64.sp,
+                        fontWeight = FontWeight.Bold,
                         color = CyanBright
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = if (hudState.phase == RecordingPhase.COUNTDOWN) "GET READY" else "HOLD STILL",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = AmberWarning,
-                        letterSpacing = 1.sp
+                        letterSpacing = 0.8.sp
                     )
                 } else {
                     val minutes = hudState.boutElapsedSeconds / 60
@@ -167,17 +164,18 @@ fun RecordingScreen(
 
                     Text(
                         text = timerString,
-                        fontSize = 54.sp,
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Black,
+                        fontSize = 48.sp,
+                        fontFamily = FontFamily.SansSerif,
+                        fontWeight = FontWeight.Bold,
                         color = TextPrimary
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "PLANNED: $plannedString",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = TextMuted,
-                        letterSpacing = 1.sp
+                        letterSpacing = 0.6.sp
                     )
                 }
             }
@@ -188,7 +186,8 @@ fun RecordingScreen(
         // Task Summary Pill
         KinesisCard(
             modifier = Modifier.fillMaxWidth(),
-            backgroundColor = SurfaceElevated
+            backgroundColor = SurfaceDark,
+            borderColor = CardBorder
         ) {
             Column {
                 Text(
@@ -211,7 +210,7 @@ fun RecordingScreen(
         // Live Telemetry Health Grid
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             MetricChip(
                 label = "Accel Rate",
@@ -229,11 +228,11 @@ fun RecordingScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             MetricChip(
                 label = "GPS Accuracy",
@@ -260,7 +259,7 @@ fun RecordingScreen(
             enabled = hudState.phase == RecordingPhase.BOUT
         )
 
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         // Hold-to-Stop Button or Completion Button
         if (hudState.phase == RecordingPhase.COMPLETED) {
@@ -277,6 +276,8 @@ fun RecordingScreen(
                 label = "HOLD 2s TO STOP BOUT"
             )
         }
+
+        Spacer(modifier = Modifier.height(8.dp))
     }
 
     // Mark Event Dialog
@@ -284,7 +285,8 @@ fun RecordingScreen(
         Dialog(onDismissRequest = { showMarkerDialog = false }) {
             KinesisCard(
                 modifier = Modifier.fillMaxWidth(),
-                backgroundColor = SurfaceDark
+                backgroundColor = SurfaceDark,
+                borderColor = CardBorder
             ) {
                 Column {
                     Text(
@@ -325,7 +327,8 @@ fun RecordingScreen(
                             focusedBorderColor = CyanPrimary,
                             unfocusedBorderColor = CardBorder,
                             focusedTextColor = TextPrimary,
-                            unfocusedTextColor = TextPrimary
+                            unfocusedTextColor = TextPrimary,
+                            cursorColor = CyanPrimary
                         ),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
@@ -337,7 +340,10 @@ fun RecordingScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End
                     ) {
-                        TextButton(onClick = { showMarkerDialog = false }) {
+                        TextButton(
+                            onClick = { showMarkerDialog = false },
+                            modifier = Modifier.height(44.dp)
+                        ) {
                             Text("Cancel", color = TextSecondary)
                         }
                         Spacer(modifier = Modifier.width(8.dp))
@@ -348,7 +354,8 @@ fun RecordingScreen(
                                 }
                                 customMarkerText = ""
                                 showMarkerDialog = false
-                            }
+                            },
+                            modifier = Modifier.height(44.dp)
                         ) {
                             Text("Submit", color = CyanPrimary, fontWeight = FontWeight.Bold)
                         }

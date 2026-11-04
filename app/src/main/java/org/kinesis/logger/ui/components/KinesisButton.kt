@@ -11,14 +11,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -32,13 +30,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
-import org.kinesis.logger.ui.theme.BgDark
-import org.kinesis.logger.ui.theme.BlueAccent
 import org.kinesis.logger.ui.theme.CardBorder
-import org.kinesis.logger.ui.theme.CyanPrimary
 import org.kinesis.logger.ui.theme.GradientCyanBlue
 import org.kinesis.logger.ui.theme.RedAlert
+import org.kinesis.logger.ui.theme.RedAlertBg
 import org.kinesis.logger.ui.theme.Shapes
+import org.kinesis.logger.ui.theme.SurfaceDark
+import org.kinesis.logger.ui.theme.SurfaceElevated
+import org.kinesis.logger.ui.theme.TextMuted
 import org.kinesis.logger.ui.theme.TextPrimary
 
 @Composable
@@ -58,7 +57,7 @@ fun KinesisPrimaryButton(
         shape = Shapes.medium,
         colors = ButtonDefaults.buttonColors(
             containerColor = Color.Transparent,
-            disabledContainerColor = Color(0xFF1E293B)
+            disabledContainerColor = SurfaceElevated
         ),
         contentPadding = PaddingValues()
     ) {
@@ -66,15 +65,16 @@ fun KinesisPrimaryButton(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp)
-                .background(if (enabled) brush else Brush.linearGradient(listOf(Color(0xFF1E293B), Color(0xFF1E293B))))
+                .background(if (enabled) brush else Brush.linearGradient(listOf(SurfaceElevated, SurfaceElevated)))
                 .padding(horizontal = 16.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = text,
-                color = if (enabled) BgDark else Color(0xFF64748B),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
+                color = if (enabled) Color(0xFF0F172A) else TextMuted,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.5.sp
             )
         }
     }
@@ -89,13 +89,14 @@ fun KinesisSecondaryButton(
 ) {
     OutlinedButton(
         onClick = onClick,
-        modifier = modifier
-            .height(48.dp),
+        modifier = modifier.height(48.dp),
         enabled = enabled,
         shape = Shapes.medium,
         colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = Color(0xFF111827),
-            contentColor = TextPrimary
+            containerColor = SurfaceDark,
+            contentColor = TextPrimary,
+            disabledContainerColor = SurfaceDark.copy(alpha = 0.5f),
+            disabledContentColor = TextMuted
         ),
         border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
     ) {
@@ -122,15 +123,15 @@ fun KinesisDangerButton(
         enabled = enabled,
         shape = Shapes.medium,
         colors = ButtonDefaults.buttonColors(
-            containerColor = Color(0xFF2A1519),
+            containerColor = RedAlertBg,
             contentColor = RedAlert
         ),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF7F1D1D))
+        border = androidx.compose.foundation.BorderStroke(1.dp, RedAlert.copy(alpha = 0.4f))
     ) {
         Text(
             text = text,
             fontWeight = FontWeight.Bold,
-            fontSize = 15.sp
+            fontSize = 14.sp
         )
     }
 }
@@ -169,8 +170,8 @@ fun KinesisHoldToStopButton(
             .fillMaxWidth()
             .height(56.dp)
             .clip(Shapes.medium)
-            .background(Color(0xFF221115))
-            .border(1.dp, Color(0xFF7F1D1D), Shapes.medium)
+            .background(Color(0xFF2B1D24))
+            .border(1.dp, RedAlert.copy(alpha = 0.4f), Shapes.medium)
             .pointerInput(Unit) {
                 detectTapGestures(
                     onPress = {
@@ -198,7 +199,8 @@ fun KinesisHoldToStopButton(
                 text = if (isPressed) "HOLDING... ${(progress * 100).toInt()}%" else label,
                 color = if (isPressed) Color.White else RedAlert,
                 fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
+                fontSize = 15.sp,
+                letterSpacing = 0.5.sp
             )
         }
     }

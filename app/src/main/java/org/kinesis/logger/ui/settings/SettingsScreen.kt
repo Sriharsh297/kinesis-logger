@@ -1,43 +1,44 @@
 package org.kinesis.logger.ui.settings
 
-import android.content.Context
 import android.os.Build
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.kinesis.logger.ui.components.KinesisCard
 import org.kinesis.logger.ui.components.KinesisPrimaryButton
-import org.kinesis.logger.ui.components.KinesisSecondaryButton
 import org.kinesis.logger.ui.components.StatusBadge
 import org.kinesis.logger.ui.components.StatusLevel
 import org.kinesis.logger.ui.theme.BgDark
-import org.kinesis.logger.ui.theme.CyanBright
-import org.kinesis.logger.ui.theme.CyanPrimary
-import org.kinesis.logger.ui.theme.SurfaceElevated
+import org.kinesis.logger.ui.theme.CardBorder
+import org.kinesis.logger.ui.theme.SurfaceDark
 import org.kinesis.logger.ui.theme.TextMuted
 import org.kinesis.logger.ui.theme.TextPrimary
 import org.kinesis.logger.ui.theme.TextSecondary
@@ -48,38 +49,70 @@ fun SettingsScreen(
     onNavigateToCoverage: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
     val scrollState = rememberScrollState()
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(BgDark)
-            .padding(horizontal = 20.dp, vertical = 16.dp)
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .padding(horizontal = 20.dp, vertical = 12.dp)
             .verticalScroll(scrollState)
     ) {
+        // App Bar with 48dp touch targets
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = TextPrimary)
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier.size(48.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(SurfaceDark)
+                        .border(1.dp, CardBorder, RoundedCornerShape(10.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = TextPrimary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "SETTINGS & INFO",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextPrimary
-            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                Text(
+                    text = "SETTINGS & INFO",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary,
+                    letterSpacing = 0.5.sp
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "Device Configuration • Protocol Specs",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = TextSecondary
+                )
+            }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Device Specs Card
         KinesisCard(
             modifier = Modifier.fillMaxWidth(),
-            backgroundColor = SurfaceElevated
+            backgroundColor = SurfaceDark,
+            borderColor = CardBorder
         ) {
             Column {
                 Text(
@@ -87,7 +120,7 @@ fun SettingsScreen(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextMuted,
-                    letterSpacing = 1.sp
+                    letterSpacing = 0.8.sp
                 )
                 Spacer(modifier = Modifier.height(10.dp))
                 SettingItemRow("Manufacturer", Build.MANUFACTURER.replaceFirstChar { it.uppercase() })
@@ -97,12 +130,13 @@ fun SettingsScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
         // Permissions Card
         KinesisCard(
             modifier = Modifier.fillMaxWidth(),
-            backgroundColor = SurfaceElevated
+            backgroundColor = SurfaceDark,
+            borderColor = CardBorder
         ) {
             Column {
                 Text(
@@ -110,7 +144,7 @@ fun SettingsScreen(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextMuted,
-                    letterSpacing = 1.sp
+                    letterSpacing = 0.8.sp
                 )
                 Spacer(modifier = Modifier.height(10.dp))
                 PermissionRow("Activity Recognition", "Physical cadence detection", true)
@@ -120,12 +154,13 @@ fun SettingsScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
         // Protocol Info Card
         KinesisCard(
             modifier = Modifier.fillMaxWidth(),
-            backgroundColor = SurfaceElevated
+            backgroundColor = SurfaceDark,
+            borderColor = CardBorder
         ) {
             Column {
                 Text(
@@ -133,7 +168,7 @@ fun SettingsScreen(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextMuted,
-                    letterSpacing = 1.sp
+                    letterSpacing = 0.8.sp
                 )
                 Spacer(modifier = Modifier.height(10.dp))
                 SettingItemRow("Protocol Version", "v0.1 (Capstone-I)")
@@ -143,7 +178,7 @@ fun SettingsScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         // Coverage Button
         KinesisPrimaryButton(
@@ -151,6 +186,8 @@ fun SettingsScreen(
             onClick = onNavigateToCoverage,
             modifier = Modifier.fillMaxWidth()
         )
+
+        Spacer(modifier = Modifier.height(8.dp))
     }
 }
 
@@ -159,8 +196,9 @@ private fun SettingItemRow(label: String, value: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+            .padding(vertical = 5.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Text(text = label, color = TextSecondary, fontSize = 13.sp)
         Text(text = value, color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
@@ -178,7 +216,7 @@ private fun PermissionRow(title: String, desc: String, granted: Boolean) {
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(text = title, color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
-            Text(text = desc, color = TextMuted, fontSize = 11.sp)
+            Text(text = desc, color = TextMuted, fontSize = 12.sp)
         }
         StatusBadge(
             text = if (granted) "GRANTED" else "DENIED",
