@@ -1,0 +1,182 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1060 720" width="100%" height="100%" style="background-color: #0b111e; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <linearGradient id="bgGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b111e"/>
+      <stop offset="100%" stop-color="#111c30"/>
+    </linearGradient>
+    <linearGradient id="implCardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#064e3b"/>
+      <stop offset="100%" stop-color="#022c22"/>
+    </linearGradient>
+    <linearGradient id="propCardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1b4b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <filter id="subtleShadow2" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+    <marker id="arrowCyan" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowGreen2" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#10b981"/>
+    </marker>
+    <marker id="arrowPurple" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowOrange" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#f59e0b"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1060" height="720" fill="url(#bgGrad2)"/>
+
+  <!-- Header -->
+  <text x="40" y="44" fill="#f8fafc" font-size="20" font-weight="700" letter-spacing="0.5">PROPOSED KINESIS ECOSYSTEM ARCHITECTURE</text>
+  <text x="40" y="66" fill="#94a3b8" font-size="12">Multimodal Fraud-Resistant Move-to-Earn &amp; Play-to-Earn Web3 Research Platform</text>
+
+  <!-- Legend -->
+  <g transform="translate(620, 26)">
+    <rect x="0" y="0" width="190" height="30" rx="5" fill="#064e3b" stroke="#10b981" stroke-width="1"/>
+    <circle cx="14" cy="15" r="4" fill="#34d399"/>
+    <text x="26" y="19" fill="#e2e8f0" font-size="10.5" font-weight="600">Implemented (Capstone-I)</text>
+
+    <rect x="205" y="0" width="195" height="30" rx="5" fill="#1e1b4b" stroke="#8b5cf6" stroke-width="1"/>
+    <circle cx="219" cy="15" r="4" fill="#c084fc"/>
+    <text x="231" y="19" fill="#e2e8f0" font-size="10.5" font-weight="600">Proposed (Capstone-II)</text>
+  </g>
+
+  <!-- COLUMN 1: DATA ACQUISITION & INGESTION (Left) -->
+  <rect x="40" y="85" width="280" height="605" rx="10" fill="#0f172a" stroke="#10b981" stroke-width="1.5" filter="url(#subtleShadow2)"/>
+  <rect x="40" y="85" width="280" height="34" rx="10" fill="#064e3b"/>
+  <text x="56" y="107" fill="#6ee7b7" font-size="12" font-weight="700">1. MOBILE SENSING (IMPLEMENTED)</text>
+
+  <!-- Kinesis Logger App -->
+  <rect x="56" y="130" width="248" height="110" rx="6" fill="#042f2e" stroke="#14b8a6" stroke-width="1"/>
+  <text x="68" y="152" fill="#5eead4" font-size="13" font-weight="700">Kinesis Logger Android App</text>
+  <text x="68" y="170" fill="#ccfbf1" font-size="10.5">• High-rate IMU (100 Hz Accel / Gyro)</text>
+  <text x="68" y="186" fill="#ccfbf1" font-size="10.5">• Pedometer &amp; Dual GNSS (Fused + GPS)</text>
+  <text x="68" y="202" fill="#ccfbf1" font-size="10.5">• Ground truth tasks (T01–T16)</text>
+  <text x="68" y="218" fill="#ccfbf1" font-size="10.5">• SHA-256 manifest &amp; zip packaging</text>
+
+  <!-- Storage / Pre-sign -->
+  <rect x="56" y="252" width="248" height="74" rx="6" fill="#042f2e" stroke="#0d9488" stroke-width="1"/>
+  <text x="68" y="272" fill="#5eead4" font-size="11.5" font-weight="600">Direct S3 Pre-Signed Upload</text>
+  <text x="68" y="288" fill="#99f6e4" font-size="10">• Temporary URL from Lambda Signer</text>
+  <text x="68" y="304" fill="#99f6e4" font-size="10">• Encrypted raw dataset repository</text>
+  <text x="68" y="318" fill="#99f6e4" font-size="10">• Strict data privacy &amp; zero key leaks</text>
+
+  <!-- Proposed Ingestion Layer Boundary -->
+  <line x1="56" y1="344" x2="304" y2="344" stroke="#475569" stroke-dasharray="4 4" stroke-width="1.5"/>
+  <text x="86" y="362" fill="#94a3b8" font-size="10" font-weight="600">CAPSTONE-II INGESTION BOUNDARY</text>
+
+  <!-- Backend Ingestion -->
+  <rect x="56" y="378" width="248" height="135" rx="6" fill="#1e1b4b" stroke="#6366f1" stroke-width="1"/>
+  <text x="68" y="400" fill="#a5b4fc" font-size="12" font-weight="600">Backend Ingestion &amp; Feature Engine</text>
+  <text x="68" y="416" fill="#c7d2fe" font-size="10">• Time-windowing (10s window, 5s stride)</text>
+  <text x="68" y="432" fill="#c7d2fe" font-size="10">• IMU feature extraction (FFT, jerk, entropy)</text>
+  <text x="68" y="448" fill="#c7d2fe" font-size="10">• GPS plausibility (speed vs cadence, jumps)</text>
+  <text x="68" y="464" fill="#c7d2fe" font-size="10">• On-chain telemetry parser (mint intervals)</text>
+  <text x="68" y="480" fill="#c7d2fe" font-size="10">• Parity-tested shared feature pipeline</text>
+
+  <!-- Data Lake / Offline Splits -->
+  <rect x="56" y="525" width="248" height="145" rx="6" fill="#1e1b4b" stroke="#6366f1" stroke-width="1"/>
+  <text x="68" y="547" fill="#a5b4fc" font-size="12" font-weight="600">Research Evaluation Splits</text>
+  <text x="68" y="565" fill="#c7d2fe" font-size="10">• Leave-One-Subject-Out (LOSO)</text>
+  <text x="68" y="581" fill="#c7d2fe" font-size="10">• Leave-One-Device-Out (LODO)</text>
+  <text x="68" y="597" fill="#c7d2fe" font-size="10">• Leave-One-Attack-Type-Out (LOAO)</text>
+  <text x="68" y="613" fill="#c7d2fe" font-size="10">• Realistic fraud prevalence (1%–5%)</text>
+  <text x="68" y="629" fill="#c7d2fe" font-size="10">• False blocks / device-hour metric</text>
+
+  <!-- COLUMN 2: MULTIMODAL AI FRAUD DETECTION (Center) -->
+  <rect x="345" y="85" width="370" height="605" rx="10" fill="#0f172a" stroke="#8b5cf6" stroke-width="1.5" filter="url(#subtleShadow2)"/>
+  <rect x="345" y="85" width="370" height="34" rx="10" fill="#2e1065"/>
+  <text x="361" y="107" fill="#d8b4fe" font-size="12" font-weight="700">2. MULTIMODAL FRAUD DETECTION (PROPOSED)</text>
+
+  <!-- Baseline B0 & B1 -->
+  <rect x="361" y="130" width="338" height="75" rx="6" fill="#1e1b4b" stroke="#4c1d95" stroke-width="1"/>
+  <text x="373" y="150" fill="#e9d5ff" font-size="11.5" font-weight="600">Rule-Based Baselines (B0 &amp; B1)</text>
+  <text x="373" y="168" fill="#cbd5e1" font-size="10">• B0: OS Step Counter only (Vulnerable to swingers/shakes)</text>
+  <text x="373" y="184" fill="#cbd5e1" font-size="10">• B1: GPS Heuristics (Speed thresholds, isMockProvider flags)</text>
+
+  <!-- Baseline B2: Sensor-only ML -->
+  <rect x="361" y="215" width="338" height="90" rx="6" fill="#1e1b4b" stroke="#7c3aed" stroke-width="1"/>
+  <text x="373" y="235" fill="#e9d5ff" font-size="11.5" font-weight="600">Baseline B2: Sensor-Only ML (Lee 2025 Approach)</text>
+  <text x="373" y="253" fill="#cbd5e1" font-size="10">• Supervised classifier (LightGBM / CNN / BiLSTM)</text>
+  <text x="373" y="269" fill="#cbd5e1" font-size="10">• Trained on 100 Hz acceleration &amp; angular velocity patterns</text>
+  <text x="373" y="285" fill="#cbd5e1" font-size="10">• Detects physical periodic fakes (auto-walkers, hand-shakes)</text>
+
+  <!-- Baseline B3: On-Chain-only -->
+  <rect x="361" y="315" width="338" height="85" rx="6" fill="#1e1b4b" stroke="#7c3aed" stroke-width="1"/>
+  <text x="373" y="335" fill="#e9d5ff" font-size="11.5" font-weight="600">Baseline B3: On-Chain Behavioral Model</text>
+  <text x="373" y="353" fill="#cbd5e1" font-size="10">• Wallet graph analysis (sybil clusters, fan-out minting)</text>
+  <text x="373" y="369" fill="#cbd5e1" font-size="10">• Temporal regularity of reward claims &amp; staking velocity</text>
+  <text x="373" y="385" fill="#cbd5e1" font-size="10">• Cannot verify if physical movement actually occurred</text>
+
+  <!-- THE FUSION MODEL (Core Research Contribution) -->
+  <rect x="361" y="415" width="338" height="150" rx="6" fill="#3b0764" stroke="#c084fc" stroke-width="2"/>
+  <text x="373" y="437" fill="#f5d0fe" font-size="13" font-weight="700">Kinesis Multimodal Fusion Engine (Core Contribution)</text>
+  <text x="373" y="457" fill="#e2e8f0" font-size="10.5">• Late / Intermediate Fusion combining Sensor + Wallet vectors</text>
+  <text x="373" y="475" fill="#e2e8f0" font-size="10.5">• Evaluates joint plausibility: [Physical Effort ↔ Claim Rhythm]</text>
+  <text x="373" y="493" fill="#e2e8f0" font-size="10.5">• Sustained-evidence window logic (eliminates transient false alarms)</text>
+  <text x="373" y="511" fill="#e2e8f0" font-size="10.5">• Evaluated on unseen attack types &amp; zero-leakage subject splits</text>
+  <text x="373" y="529" fill="#a7f3d0" font-size="10.5" font-weight="600">→ Output: Signed Cryptographic Attestation (Allow / Penalize)</text>
+
+  <!-- Oracle Relayer -->
+  <rect x="361" y="575" width="338" height="95" rx="6" fill="#1e1b4b" stroke="#6366f1" stroke-width="1"/>
+  <text x="373" y="597" fill="#a5b4fc" font-size="11.5" font-weight="600">Secure Backend Oracle / Relayer</text>
+  <text x="373" y="615" fill="#cbd5e1" font-size="10">• Verifies fraud score against validation cost-based threshold</text>
+  <text x="373" y="631" fill="#cbd5e1" font-size="10">• Signs mint authorization ticket with backend authority key</text>
+  <text x="373" y="647" fill="#cbd5e1" font-size="10">• Triggers Hyperledger Fabric audit record</text>
+
+  <!-- COLUMN 3: WEB3 ECOSYSTEM & DAPP (Right) -->
+  <rect x="740" y="85" width="280" height="605" rx="10" fill="#0f172a" stroke="#3b82f6" stroke-width="1.5" filter="url(#subtleShadow2)"/>
+  <rect x="740" y="85" width="280" height="34" rx="10" fill="#1e3a8a"/>
+  <text x="756" y="107" fill="#93c5fd" font-size="12" font-weight="700">3. WEB3 &amp; DAPP LAYER (PROPOSED)</text>
+
+  <!-- Polygon Amoy Smart Contracts -->
+  <rect x="756" y="130" width="248" height="150" rx="6" fill="#172554" stroke="#2563eb" stroke-width="1"/>
+  <text x="768" y="152" fill="#bfdbfe" font-size="12" font-weight="700">Polygon Amoy Testnet Contracts</text>
+  <text x="768" y="170" fill="#dbeafe" font-size="10">• KinesisUtilityToken (ERC-20 mintable)</text>
+  <text x="768" y="186" fill="#dbeafe" font-size="10">• KinesisGovToken (ERC-20 scarce)</text>
+  <text x="768" y="202" fill="#dbeafe" font-size="10">• Staking.sol (Proof-of-Commitment lock)</text>
+  <text x="768" y="218" fill="#dbeafe" font-size="10">• Treasury.sol (Fee accrual pool)</text>
+  <text x="768" y="234" fill="#dbeafe" font-size="10">• DAOGovernor.sol (Parameter voting)</text>
+  <text x="768" y="250" fill="#dbeafe" font-size="10">• GamePool.sol (Stake-to-play arena)</text>
+  <text x="768" y="266" fill="#fde047" font-size="10">  ↳ Chainlink VRF (Verifiable Randomness)</text>
+
+  <!-- Account Abstraction -->
+  <rect x="756" y="290" width="248" height="85" rx="6" fill="#172554" stroke="#0ea5e9" stroke-width="1"/>
+  <text x="768" y="310" fill="#7dd3fc" font-size="11.5" font-weight="600">ERC-4337 Account Abstraction</text>
+  <text x="768" y="328" fill="#e0f2fe" font-size="10">• UserOperation mempool</text>
+  <text x="768" y="344" fill="#e0f2fe" font-size="10">• EntryPoint &amp; Verifying Paymaster</text>
+  <text x="768" y="360" fill="#e0f2fe" font-size="10">• Gasless user onboarding experience</text>
+
+  <!-- Hyperledger Fabric Audit Ledger -->
+  <rect x="756" y="385" width="248" height="95" rx="6" fill="#172554" stroke="#f59e0b" stroke-width="1"/>
+  <text x="768" y="405" fill="#fde68a" font-size="11.5" font-weight="600">Hyperledger Fabric (Private Consortium)</text>
+  <text x="768" y="423" fill="#fef3c7" font-size="10">• Private channel for institutional audits</text>
+  <text x="768" y="439" fill="#fef3c7" font-size="10">• Chaincode records fraud dispute logs</text>
+  <text x="768" y="455" fill="#fef3c7" font-size="10">• Immutable integrity without gas costs</text>
+  <text x="768" y="471" fill="#fef3c7" font-size="10">• Privacy-preserving pseudonym mapping</text>
+
+  <!-- Web dApp UI -->
+  <rect x="756" y="490" width="248" height="180" rx="6" fill="#172554" stroke="#3b82f6" stroke-width="1"/>
+  <text x="768" y="512" fill="#bfdbfe" font-size="12" font-weight="700">Kinesis Web dApp (Next.js / React)</text>
+  <text x="768" y="530" fill="#dbeafe" font-size="10">• SIWE (Sign-In with Ethereum) login</text>
+  <text x="768" y="546" fill="#dbeafe" font-size="10">• Move-to-earn fitness dashboard</text>
+  <text x="768" y="562" fill="#dbeafe" font-size="10">• Stake-to-play skill arcade</text>
+  <text x="768" y="578" fill="#dbeafe" font-size="10">• Staking yields &amp; Amazon vouchers</text>
+  <text x="768" y="594" fill="#dbeafe" font-size="10">• Real-time fraud reputation score</text>
+  <text x="768" y="610" fill="#dbeafe" font-size="10">• DAO proposal submission &amp; voting</text>
+
+  <!-- ARROWS BETWEEN COLUMNS -->
+  <!-- Col 1 Ingestion to Col 2 Baselines -->
+  <path d="M 304 445 L 345 445" stroke="#a855f7" stroke-width="1.8" fill="none" marker-end="url(#arrowPurple)"/>
+  <!-- Col 2 Fusion / Oracle to Col 3 Smart Contracts -->
+  <path d="M 699 622 L 720 622 L 720 205 L 756 205" stroke="#38bdf8" stroke-width="1.8" fill="none" marker-end="url(#arrowCyan)"/>
+  <!-- Col 2 Oracle to Hyperledger -->
+  <path d="M 699 640 L 730 640 L 730 432 L 756 432" stroke="#f59e0b" stroke-width="1.8" fill="none" marker-end="url(#arrowOrange)"/>
+
+</svg>

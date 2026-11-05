@@ -1,6 +1,6 @@
+# Android Studio / Gradle
 *.iml
 .gradle
-/local.properties
 /.idea
 .DS_Store
 /build
@@ -8,4 +8,25 @@
 /captures
 .externalNativeBuild
 .cxx
+
+# Local configuration & credentials
+/local.properties
 local.properties
+*.jks
+*.keystore
+*.key
+*.pem
+*.p12
+.env*
+secrets.*
+
+# Research data & raw sensor exports (Do NOT commit raw data or GPS traces)
+raw/
+processed/
+participants/
+*.csv
+*.csv.gz
+*.zip
+*.tar.gz
+*.parquet
+session_exports/

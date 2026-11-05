@@ -1,87 +1,182 @@
 # Kinesis Logger (v0.1)
 
-A native Android data-collection instrument built for the **Kinesis** research project (Capstone-I, by P Samuel Vijay and Arikela Sriharsh).
+A native Android data-acquisition instrument built for the **Kinesis** research project (Capstone-I / II, by P Samuel Vijay and Arikela Sriharsh; Faculty Guide: P Phani Prasad, Dept. of CSE – Allied, MVSR Engineering College).
 
-The app records time-aligned, un-resampled raw sensor streams (100 Hz accelerometer, 100 Hz gyroscope, step detector, step counter, 1 Hz fused GNSS, and 1 Hz raw GPS provider) across controlled genuine movement, benign non-walking, and fraud bouts.
+Kinesis Logger records time-aligned, un-resampled raw sensor streams (100 Hz accelerometer, 100 Hz gyroscope, step detector, step counter, 1 Hz fused GNSS, and 1 Hz GPS provider) across structured genuine movement, everyday benign non-walking, and physical fraud attacks.
 
 ---
 
-## Visual Preview
+### Project Context
 
+> **Kinesis Logger is a dedicated Android data-collection application developed as one component of the broader [Main Kinesis Project](https://github.com/psamuelvijay/Kinesis).** Its role is to capture, organize, and export the mobile sensor and location data required for the research and development of the larger system. It serves as the data-acquisition layer, while the main Kinesis repository contains the broader project vision and ecosystem.
+>
+> This repository focuses specifically on the Android logging instrument and its data-collection pipeline. It should not be presented as the complete implementation of Kinesis.
+
+---
+
+## 1. Visual Walkthrough
+
+The application interface is built with Jetpack Compose following a modern fitness-tech / research instrument aesthetic, respecting system bar insets and enforcing $\ge 48\text{dp}$ touch accessibility targets across all controls.
+
+### A. Dashboard & Subject Selection
 <p align="center">
-  <img src="screenshots/01_dashboard.png" width="310" alt="Task Dashboard Screen" />
+  <img src="screenshots/01_dashboard.png" width="360" alt="Kinesis Logger Task Dashboard" />
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="screenshots/03_preflight.png" width="310" alt="Pre-Flight Diagnostic Screen" />
+  <img src="screenshots/02_subject_dropdown.png" width="360" alt="Subject Selector Dropdown showing S01 to S06" />
 </p>
+<p align="center">
+  <em>Figure 1: (Left) Task Dashboard displaying immutable task metadata, placement instructions, and duration. (Right) Participant selector constrained to approved cohort S01–S06.</em>
+</p>
+
+### B. Pre-Flight Diagnostics
+<p align="center">
+  <img src="screenshots/03_preflight.png" width="360" alt="Pre-Flight Sensor Checklist" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="screenshots/04_preflight_bottom.png" width="360" alt="Pre-Flight Battery Optimization and Start Recording CTA" />
+</p>
+<p align="center">
+  <em>Figure 2: Real-time pre-flight diagnostic validation. (Left) Hardware availability, target sampling rate audit, GPS lock accuracy, and storage capacity checks. (Right) OEM background battery-saver override toggle and 10-second countdown launch CTA.</em>
+</p>
+
+### C. Live Recording HUD & Post-Session Quality Summary
+<p align="center">
+  <img src="screenshots/08_recording_hud.png" width="360" alt="Live Recording HUD with hold to stop" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="screenshots/09_post_session.png" width="360" alt="Post-Session Quality Summary and manual step entry" />
+</p>
+<p align="center">
+  <em>Figure 3: (Left) Live recording HUD showing elapsed bout duration, real-time sensor health indicators, landmark marker button, and a 2-second hold-to-stop safety trigger. (Right) Post-session quality calculator showing achieved rates, dropped gaps, and ground-truth step count audit entry.</em>
+</p>
+
+### D. Device Configuration, Dataset Coverage & Cloud Sync
+<p align="center">
+  <img src="screenshots/05_settings.png" width="300" alt="Device Profile and Permissions" />
+  &nbsp;&nbsp;
+  <img src="screenshots/06_coverage_tracker.png" width="300" alt="Dataset Coverage Matrix" />
+  &nbsp;&nbsp;
+  <img src="screenshots/07_sessions.png" width="300" alt="Recorded Sessions and S3 Sync Status" />
+</p>
+<p align="center">
+  <em>Figure 4: (Left) Device hardware specifications and runtime permissions. (Center) Dataset coverage matrix monitoring collected hours across genuine, benign, and fraud classes. (Right) Local session archive with one-tap cloud sync status.</em>
+</p>
+
+---
+
+## 2. Architecture & Data Pipeline
+
+### System Architecture (Kinesis Logger v0.1)
+The logging instrument separates foreground sensor collection from disk persistence via an asynchronous, thread-safe queuing architecture:
 
 <p align="center">
-  <em>Left: Task Dashboard with subject selector (S01–S06) and protocol cards. Right: Real-time sensor pre-flight validation.</em>
+  <img src="docs/diagrams/kinesis_logger_architecture.svg" width="95%" alt="Kinesis Logger Architecture Diagram" />
+</p>
+<p align="center">
+  <em>Figure 5: High-throughput Android data acquisition pipeline. Sensor callbacks push into bounded concurrent queues drained by an off-UI writer daemon flushing to compressed CSVs every &le; 1 second. Source: <a href="docs/diagrams/kinesis_logger_architecture.mmd">docs/diagrams/kinesis_logger_architecture.mmd</a>.</em>
+</p>
+
+### Proposed Kinesis Ecosystem Architecture (Capstone-II)
+Kinesis Logger forms the empirical data-collection foundation for the broader research project:
+
+<p align="center">
+  <img src="docs/diagrams/kinesis_ecosystem_architecture.svg" width="95%" alt="Proposed Kinesis Ecosystem Architecture Diagram" />
+</p>
+<p align="center">
+  <em>Figure 6: Proposed end-to-end Kinesis research platform distinguishing implemented Capstone-I components (green) from proposed Capstone-II components (purple/blue). Source: <a href="docs/diagrams/kinesis_ecosystem_architecture.mmd">docs/diagrams/kinesis_ecosystem_architecture.mmd</a>.</em>
 </p>
 
 ---
 
-## Architecture & Technology Stack
+## 3. Engineering & Technical Credibility
 
-- **Platform:** Native Android (Kotlin, Jetpack Compose, Material3)
-- **Minimum SDK:** API 29 (Android 10)
-- **Target SDK:** API 35 (Android 15)
-- **Visual Design:** Modern fitness-tech / research instrument aesthetic (Navy background `#101827`, elevated card surfaces `#202D40`, cyan/blue accents `#22B8CF` / `#4285F4`, clean sans-serif typography, system bar insets & 48dp touch targets).
-- **Subject Pool:** S01–S06 protocol pool with dynamic pseudonym registration support.
-- **Concurrency & IO:** Dedicated daemon worker thread per session with thread-safe bounded queues; non-blocking sensor event handlers; atomic periodic flushing (&le; 1 s) with crash recovery.
-- **Background Execution:** Foreground Service with `foregroundServiceType="location|health"` and partial wake lock.
-- **Cloud Synchronization:** Secure direct upload to private AWS S3 bucket (`kinesis-data-collection-837206353876`) via temporary pre-signed S3 URLs generated by an API Gateway + AWS Lambda microservice (zero AWS credentials stored in the APK).
+### Monotonic Elapsed-Realtime Timestamp Strategy
+To ensure cross-sensor temporal alignment without susceptibility to operating system clock drift or network time adjustments:
+- Every accelerometer, gyroscope, and step event records hardware nanoseconds directly from `SensorEvent.timestamp`.
+- Every location record logs `Location.getElapsedRealtimeNanos()`.
+- **Zero Wall-Clock Rows:** Individual CSV rows never store wall-clock timestamps. A single calibration offset (`boot_offset_ms = System.currentTimeMillis() - SystemClock.elapsedRealtime()`) is recorded at session start in `session.json` to allow post-hoc UTC reconstruction without compromising sub-millisecond inter-sample alignment.
+- **Hardware Delivery:** Streams are logged exactly as delivered by hardware without on-phone interpolation or artificial resampling.
 
----
+### OS Step Counts: Reference Signals, Not Labels
+Commercial Move-to-Earn platforms rely on Android's `TYPE_STEP_COUNTER` as an oracle of truth. In Kinesis:
+- OS step counts are treated strictly as **untrusted reference signals**.
+- Operating system pedometer algorithms are proprietary black boxes that routinely miscount during irregular gait and register false steps during seated hand shaking (F1/F2) and pendulum swinging (F3).
+- **Ground Truth Step Count:** During task **T04** (counted bouts), researchers perform exactly 100 physical steps verified by partner observation or video recording, providing an empirical baseline to audit OS error rates.
 
-## 4-Commit Milestones
+### Cryptographic Integrity & Session Manifest
+To detect transmission corruption and guarantee immutability prior to analysis:
+- Every completed session directory generates a `manifest.sha256` file containing individual SHA-256 digests of all sensor CSVs, events, and `session.json`.
+- Cloud uploads require hash validation prior to marking local files eligible for cleanup.
 
-1. **Commit 1: Skeleton and Task Cards**
-   - Single-module project setup (`app`), Material3 theme with research design tokens.
-   - Dynamic asset loader for `assets/tasks.json` supporting all protocol tasks (T01–T16).
-   - Task Dashboard with subject picker (`S01`–`S06` + custom pseudonyms), device detection, and Prev/Next navigation.
-   - Initial unit tests validating schema conformity and task counts.
-
-2. **Commit 2: Sensor Recording and Writers**
-   - High-throughput non-blocking CSV writers (`accel.csv.gz`, `gyro.csv.gz`, `step_detector.csv`, `step_counter.csv`, `location.csv`, `events.csv`).
-   - Strict timestamp fidelity: `t_ns` preserves hardware `SensorEvent.timestamp` and `Location.getElapsedRealtimeNanos()`.
-   - Boot offset calibration (`boot_offset_ms`) and dropped-sample counters.
-
-3. **Commit 3: Service and Crash Safety**
-   - Foreground service life-cycle surviving screen lock.
-   - 10 s countdown vibration, 5 s initial stillness, bout execution, 5 s terminal stillness, completion vibration.
-   - WAL flush guarantees and automatic interrupted-session detection on launch.
-   - Live recording HUD with timer, sensor health, and 2-second hold-to-stop safety.
-
-4. **Commit 4: Quality Summary, Local Export & AWS S3 Cloud Sync**
-   - Pre-flight diagnostic screen (sensors, GPS fix accuracy, mock location check, storage &gt; 500 MB, battery &gt; 30%).
-   - Post-session quality calculator (achieved rate, median gap, GPS fix %, OS vs manual step count).
-   - Manifest generator (`manifest.sha256`), `session.json` metadata, and local zip export.
-   - Direct AWS S3 cloud synchronization via pre-signed PUT requests, backed by local persistent upload queue.
+### Privacy-Preserving Cloud Synchronization Architecture
+- **Zero AWS Secrets in APK:** The Android application contains zero hardcoded AWS IAM credentials, secret access keys, or long-term write permissions.
+- **Pre-Signed Ingestion:** The client authenticates against a private serverless API endpoint (API Gateway + AWS Lambda), which signs a time-limited (15-minute) pre-signed `PUT` URL.
+- **Encrypted Storage:** Telemetry payloads are transferred directly over TLS to a private, access-restricted AWS S3 research bucket configured with server-side encryption (SSE-S3).
+- **Pseudonymous Participant Data:** Raw GPS traces and sensor records are referenced solely by pseudonyms (`S01`–`S06`). Subject identity cross-reference tables remain offline and strictly air-gapped.
 
 ---
 
-## How to Build & Run
+## 4. Implementation Status Matrix
+
+| Component | Layer | Status | Verification / Notes |
+|---|---|---|---|
+| **Task Protocol Cards** | Android Client | **Implemented &amp; Tested** | 16 tasks defined in `assets/tasks.json`, card-driven ground truth. |
+| **High-Rate IMU Logging** | Android Client | **Implemented &amp; Tested** | 100 Hz Accelerometer &amp; Gyroscope with monotonic `t_ns`. |
+| **Pedometer Logging** | Android Client | **Implemented &amp; Tested** | `TYPE_STEP_DETECTOR` event log + cumulative step counter. |
+| **Dual Location Provider** | Android Client | **Implemented &amp; Tested** | 1 Hz FusedLocation + GPS Provider with `Location.isMock()` audit. |
+| **Foreground Service &amp; Lock** | Android Client | **Implemented &amp; Tested** | `location|health` foreground service type with partial wake lock. |
+| **Asynchronous Writer Daemon** | Android Client | **Implemented &amp; Tested** | Off-UI bounded queues with atomic periodic flush ($\le 1\text{ s}$). |
+| **Post-Session QC Audit** | Android Client | **Implemented &amp; Tested** | Live gap count, achieved Hz, GPS fix %, and manual step entry. |
+| **SHA-256 Manifest Generator** | Android Client | **Implemented &amp; Tested** | Cryptographic hash manifest written on session save. |
+| **Local ZIP Share Export** | Android Client | **Implemented &amp; Tested** | Export via Android system share sheet or ADB pull. |
+| **Pre-Signed S3 Cloud Upload** | Android Client / AWS | **Implemented &amp; Tested** | API Gateway + Lambda signer with direct pre-signed PUT sync. |
+| **Multi-Modal Feature Engine** | Backend / Python | *Planned (Capstone-II)* | 10s windowed statistical, spectral, and GPS plausibility features. |
+| **Baseline Models (B0–B3)** | ML Framework | *Planned (Capstone-II)* | Rule baselines, Lee 2025 sensor-only ML, and on-chain models. |
+| **Kinesis Fusion Engine (B4)** | ML Framework | *Planned (Capstone-II)* | Multimodal sensor + wallet fraud detection core contribution. |
+| **Smart Contracts (Amoy)** | Blockchain | *Planned (Capstone-II)* | Dual-token contracts, Staking, GamePool, Chainlink VRF. |
+| **Hyperledger Fabric Channel** | Blockchain | *Planned (Capstone-II)* | Private consortium audit ledger for dispute resolution. |
+| **Web dApp** | Frontend | *Planned (Capstone-II)* | Next.js / React Web3 interface with SIWE and staking portal. |
+
+---
+
+## 5. Supporting Documentation
+
+Detailed protocol specifications and research guidelines are available in the [`docs/`](docs/) directory:
+
+- [**Protocol Specification (`docs/PROTOCOL.md`)**](docs/PROTOCOL.md) — Standard operating procedures, 16-task taxonomy, session timeline, and fraud attack setup.
+- [**Data Dictionary (`docs/DATA_DICTIONARY.md`)**](docs/DATA_DICTIONARY.md) — Comprehensive column schemas, coordinate conventions, engineering units, and `session.json` layout.
+- [**Research Methodology (`docs/RESEARCH_METHODOLOGY.md`)**](docs/RESEARCH_METHODOLOGY.md) — Baseline definitions, zero-leakage evaluation splits (LOSO/LODO/LOAO), and false block rate metrics.
+- [**Testing & Verification Guide (`docs/TESTING.md`)**](docs/TESTING.md) — Unit testing execution, P0 bench calibration, P1 field pilot procedures, and dataset QC gates.
+
+---
+
+## 6. How to Build & Run
 
 ### Prerequisites
-- JDK 21 (Eclipse Temurin 21 recommended)
-- Android SDK with Platform 35 and Build-Tools 34+
+- **JDK:** Version 21 (Eclipse Temurin 21 recommended)
+- **Android SDK:** Platform 35 (Android 15) and Build-Tools 34+
+- **Tested Physical Environments:** Google Pixel 9 (Android 15 / API 35), Google Pixel / Android 14.
 
-### Build from Terminal
+### Build via Terminal
 ```powershell
-# Set JAVA_HOME
+# Set JDK 21 environment
 $env:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-21.0.13.9-hotspot"
 
-# Run Unit Tests
+# Execute unit tests
 .\gradlew.bat testDebugUnitTest
 
 # Assemble Debug APK
 .\gradlew.bat assembleDebug
 ```
-Output APK location:
+
+The compiled package will be located at:
 `app/build/outputs/apk/debug/app-debug.apk`
 
 ---
 
-## Known Guidelines & Restrictions
-- **Data Privacy & Security:** Raw sensor data remains pseudonymous. Cloud synchronization uses time-limited pre-signed URLs from the Kinesis Lambda signer; no long-term AWS credentials or IAM secrets are embedded in the client build.
-- **Battery Optimization:** Ensure battery optimization is disabled for Kinesis Logger on OEM skins (MIUI, ColorOS, OneUI) to prevent background killing during screen-off recordings.
+## 7. Protocol Confirmation & Project Owner Items
+
+The following items are documented for explicit confirmation by the project owners:
+
+1. **Dataset Size Target:** The approved project handover specifies an initial collection target of ~34 collection hours (20 h genuine, 6 h benign, 8 h fraud) across 6 subjects and 6 phone models. The in-app dataset coverage screen currently displays an extended target of 55.0 hours. The 34-hour target satisfies the scientific validity floor for Leave-One-Subject-Out splits.
+2. **Participant Cohort Scope:** The application defaults to the approved cohort of 6 participants (`S01`–`S06`). The `+ New ID` feature remains available if institutional review permits cohort expansion.
+3. **Attack Availability:** Attack **F4** (motorized auto-walker) is dropped due to mechanical rig exclusions; **F5** (rotating turntable/fan) is conditional on equipment availability; **F8** (sensor injection) is deferred to Capstone-II testing.
+4. **Target IMU Sampling Rate:** 100 Hz represents the target requested rate; actual achieved rates vary across OEM hardware and HAL implementations (rates $\ge 95\text{ Hz}$ satisfy dataset compliance).

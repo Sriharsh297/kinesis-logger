@@ -1,0 +1,50 @@
+flowchart LR
+    subgraph SENSING ["1. Mobile Sensing Layer (Implemented)"]
+        APP["Kinesis Logger Android App<br/>• 100 Hz Accel &amp; Gyro<br/>• Step Detector &amp; Counter<br/>• 1 Hz Fused GNSS + GPS Provider<br/>• Ground Truth Tasks (T01–T16)<br/>• SHA-256 Manifest &amp; Zip Package"]
+        S3["AWS S3 Private Bucket<br/>(Temporary Pre-signed PUT via Lambda)"]
+        APP -->|Pre-signed PUT| S3
+    end
+
+    subgraph INGESTION ["2. Backend & Evaluation (Capstone-II Proposed)"]
+        PIPE["Backend Ingestion &amp; Feature Engine<br/>• 10s Window / 5s Stride<br/>• FFT, Jerk, Entropy Features<br/>• Speed vs Cadence GPS Rules"]
+        SPLITS["Research Evaluation Protocol<br/>• Leave-One-Subject-Out (LOSO)<br/>• Leave-One-Device-Out (LODO)<br/>• Leave-One-Attack-Type-Out (LOAO)<br/>• Realistic 1-5% Fraud Prevalence"]
+        S3 --> PIPE
+        PIPE --> SPLITS
+    end
+
+    subgraph MODELS ["3. Multimodal AI Fraud Detection (Proposed)"]
+        B0["Baseline B0: OS Steps Only"]
+        B1["Baseline B1: GPS Heuristics Only"]
+        B2["Baseline B2: Sensor-Only ML (Lee 2025)"]
+        B3["Baseline B3: On-Chain Wallet Behavioral Model"]
+        FUSION["Kinesis Multimodal Fusion Engine (Core Contribution)<br/>• Joint Plausibility: [Sensor Dynamics + Wallet Topology]<br/>• Sustained-Evidence Windows<br/>• Metric: False Blocks / Device-Hour"]
+        ORACLE["Backend Relayer / Oracle<br/>(Signs Cryptographic Attestation)"]
+        
+        SPLITS --> B0 & B1 & B2 & B3 & FUSION
+        FUSION --> ORACLE
+    end
+
+    subgraph WEB3 ["4. Web3 Contracts & Ledgers (Proposed)"]
+        subgraph POLYGON ["Polygon Amoy Testnet (Public)"]
+            ERC20["KinesisUtilityToken &amp; KinesisGovToken"]
+            STAKE["Staking.sol (Proof-of-Commitment)"]
+            GAME["GamePool.sol + Chainlink VRF"]
+            AA["ERC-4337 Account Abstraction (Paymaster)"]
+        end
+        
+        subgraph FABRIC ["Hyperledger Fabric (Private Consortium)"]
+            HLF["Permissioned Audit Ledger<br/>• Fraud Dispute Records<br/>• Off-Chain Zero-Gas Integrity"]
+        end
+        
+        DAPP["Kinesis Web dApp (Next.js / React)<br/>• SIWE Login • Fitness Dashboard<br/>• Staking &amp; Amazon Vouchers • DAO Governance"]
+        
+        ORACLE -->|Verified Mint Call| ERC20
+        ORACLE -->|Audit Logging| HLF
+        DAPP --> AA
+        AA --> GAME & STAKE
+    end
+
+    style SENSING fill:#042f2e,stroke:#14b8a6,stroke-width:1.5px,color:#f8fafc
+    style INGESTION fill:#1e1b4b,stroke:#6366f1,stroke-width:1.5px,color:#f8fafc
+    style MODELS fill:#2e1065,stroke:#8b5cf6,stroke-width:1.5px,color:#f8fafc
+    style WEB3 fill:#172554,stroke:#2563eb,stroke-width:1.5px,color:#f8fafc

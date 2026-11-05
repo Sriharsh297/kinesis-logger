@@ -1,0 +1,61 @@
+flowchart TD
+    subgraph UI ["1. Input & Presentation Layer"]
+        TASKS["assets/tasks.json<br/>(16-task protocol definition)"]
+        COMPOSE["Jetpack Compose UI (M3)<br/>• Dashboard & Subject Picker (S01–S06)<br/>• Pre-Flight Diagnostics<br/>• Recording HUD & Quality Summary"]
+        CTRL["Session Lifecycle Control<br/>(10s prep → 5s still → Bout → 5s still)"]
+        TASKS --> COMPOSE
+        COMPOSE --> CTRL
+    end
+
+    subgraph Service ["2. Execution & Sensing Layer"]
+        SVC["RecordingService (Foreground)<br/>location|health • Partial Wake Lock"]
+        IMU["IMU Sensors (100 Hz)<br/>Accelerometer & Gyroscope"]
+        PEDO["Pedometer Engine<br/>Step Detector & Step Counter"]
+        GNSS["Dual Location Engine (1 Hz)<br/>FusedLocationProvider + GPS Provider<br/>is_mock audit"]
+        CLOCK["Hardware Monotonic Clock<br/>elapsedRealtimeNanos base<br/>Zero wall-clock in sensor rows"]
+        
+        CTRL --> SVC
+        SVC --> IMU
+        SVC --> PEDO
+        SVC --> GNSS
+        IMU & PEDO & GNSS --> CLOCK
+    end
+
+    subgraph Pipeline ["3. Asynchronous I/O Pipeline"]
+        QUEUE["Thread-Safe Bounded Queues<br/>(ConcurrentLinkedQueue)"]
+        DAEMON["Dedicated Writer Daemon<br/>(Off-UI Thread, Flush &le; 1s, WAL)"]
+        FILES["Stream CSV Writers<br/>• accel.csv.gz (100 Hz)<br/>• gyro.csv.gz (100 Hz)<br/>• step_detector.csv<br/>• step_counter.csv<br/>• location.csv (1 Hz)<br/>• events.csv"]
+        
+        CLOCK --> QUEUE
+        QUEUE --> DAEMON
+        DAEMON --> FILES
+    end
+
+    subgraph Storage ["4. Storage & Integrity"]
+        RAW["Local Session Directory<br/>raw/KIN-YYYYMMDD-Sxx-Task-UUID/"]
+        META["session.json<br/>(Device specs, QC rates, GPS audit)"]
+        HASH["manifest.sha256<br/>(Cryptographic checksums)"]
+        
+        FILES --> RAW
+        RAW --> META
+        RAW --> HASH
+    end
+
+    subgraph Cloud ["5. Egress & Cloud Synchronization"]
+        ZIP["Local ZIP Export<br/>(Android Share Sheet / ADB)"]
+        WORKER["UploadQueueManager / WorkManager<br/>(WiFi-only, Auto-retry, Hash check)"]
+        API["AWS API Gateway + Lambda<br/>(Temporary Pre-signed URL Signer)"]
+        S3["Private AWS S3 Research Bucket<br/>(SSE-S3 Encrypted Storage)"]
+        
+        HASH --> ZIP
+        HASH --> WORKER
+        WORKER -->|1. Request Pre-signed PUT| API
+        API -->|2. Return 15-min PUT URL| WORKER
+        WORKER -->|3. Direct Binary PUT| S3
+    end
+
+    style UI fill:#141e2e,stroke:#1e293b,stroke-width:1.5px,color:#f8fafc
+    style Service fill:#141e2e,stroke:#1e293b,stroke-width:1.5px,color:#f8fafc
+    style Pipeline fill:#141e2e,stroke:#1e293b,stroke-width:1.5px,color:#f8fafc
+    style Storage fill:#141e2e,stroke:#1e293b,stroke-width:1.5px,color:#f8fafc
+    style Cloud fill:#141e2e,stroke:#1e293b,stroke-width:1.5px,color:#f8fafc
