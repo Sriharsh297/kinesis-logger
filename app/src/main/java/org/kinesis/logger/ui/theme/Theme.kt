@@ -5,7 +5,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
@@ -35,13 +34,18 @@ fun KinesisLoggerTheme(
     content: @Composable () -> Unit
 ) {
     val view = LocalView.current
+
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as? Activity)?.window
+
             if (window != null) {
-                window.statusBarColor = BgDark.toArgb()
-                window.navigationBarColor = BgDark.toArgb()
-                val controller = WindowCompat.getInsetsController(window, view)
+                val controller = WindowCompat.getInsetsController(
+                    window,
+                    view
+                )
+
+                // Dark UI: use light-colored system bar icons
                 controller.isAppearanceLightStatusBars = false
                 controller.isAppearanceLightNavigationBars = false
             }
