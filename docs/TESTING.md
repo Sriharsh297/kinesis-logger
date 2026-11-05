@@ -1,4 +1,4 @@
-# Kinesis Testing & Verification Guide
+﻿# Kinesis Testing & Verification Guide
 
 This document details the automated testing suite, hardware bench testing protocols (P0), field pilot verification (P1), and strict quality-control gates required before data freezing.
 
@@ -63,7 +63,13 @@ Prior to any participant recording, each target smartphone model must undergo an
 
 Conducted by the primary research team (Samuel & Sriharsh) across all 6 test phones to validate task cards and human factors:
 1. **Walk Normal (3 min):** Front pocket, outdoor open sky.
-2. **Counted Bout ($2 \times 100$ steps):** Partner manual footfall count recorded and compared to OS delta.
+2. **Counted Bout (step audit):** Partner manual footfall count recorded and compared to OS delta.
+
+   > [!WARNING]
+   > **⚠️ Project-Owner Confirmation Required:** The number of counted step bouts differs between documentation sources:
+   > - `docs/PROTOCOL.md` (Section 3, Task T04): specifies **3 × 100 steps** (front pocket, back pocket, and hand-viewing placements).
+   > - `docs/TESTING.md` (this file, P1 Field Pilot, item 2): previously specified **2 × 100 steps**.
+   > The `assets/tasks.json` defines T04 as a single card with one counted bout of 100 steps. The correct number of bouts per volunteer visit must be confirmed by the project owners before data collection. Do not change the protocol without explicit approval.
 3. **Walk Hand-Swinging (3 min):** Brisk pace.
 4. **Jogging (2 min):** High-cadence locomotion.
 5. **Stationary Desk (2 min):** Baseline environmental noise.

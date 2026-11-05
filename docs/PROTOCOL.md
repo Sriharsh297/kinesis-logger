@@ -1,4 +1,4 @@
-# Kinesis Data Collection Protocol (v0.1)
+﻿# Kinesis Data Collection Protocol (v0.1)
 
 This document formalizes the data acquisition protocol, task taxonomy, and operational guidelines for the **Kinesis Logger** research instrument. It serves as the standard operating procedure for all field and bench data collections.
 
@@ -66,7 +66,10 @@ Everyday non-locomotive behaviors that produce sensor motion or GPS drift but mu
 | **T08** | B1 | Sitting / Typing | 3 min | Desk / Flat surface | Indoor office | Baseline environmental vibrations |
 | **B2** | B2 | Motorized Transit | 10–30 min | Lap / Pocket / Seat | Bus, car, auto-rickshaw | High GPS speed, low human cadence |
 | **B3** | B3 | Cycling | 10–15 min | Handlebar / Pocket | Road / Path | Smooth rotational acceleration |
-| **B4** | B4 | Household Chores | 5–10 min | Pocket / Hand | Indoor residence | Erratic micro-movements |
+| **B4** | B4 | Household Chores |
+
+> [!NOTE]
+> **Taxonomy Reconciliation Note:** The `assets/tasks.json` application configuration currently defines **16 task cards**: 10 genuine movement tasks (T01–T07, T09–T11), 1 structured benign task (T08 Sitting/Typing), and 5 fraud attack tasks (T12-F1, T12-F2, T12-F3, T12-F6, T12-F7). The benign categories **B2 (Motorized Transit), B3 (Cycling), and B4 (Household Chores)** are documented as opportunistic collection targets — these sessions are recorded outside of the structured task-card workflow and do not have dedicated app cards. The 16-task count in automated tests (`TaskLoaderTest`) refers specifically to the app task cards. 5–10 min | Pocket / Hand | Indoor residence | Erratic micro-movements |
 
 ### Family 3: Fraud Attacks (`FRAUD`)
 Active attempts to simulate physical movement or spoof geographic location (`reward_eligible = 0`, `label_binary_fraud = 1`).

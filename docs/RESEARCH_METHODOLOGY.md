@@ -1,4 +1,4 @@
-# Kinesis Research Methodology & Evaluation Framework
+﻿# Kinesis Research Methodology & Evaluation Framework
 
 This document outlines the theoretical framing, baseline definitions, experimental evaluation protocol, and scientific rigor measures for the Kinesis research project.
 

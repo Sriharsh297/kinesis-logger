@@ -1,4 +1,4 @@
-# Kinesis Logger (v0.1)
+﻿# Kinesis Logger (v0.1)
 
 A native Android data-acquisition instrument built for the **Kinesis** research project (Capstone-I / II, by P Samuel Vijay and Arikela Sriharsh; Faculty Guide: P Phani Prasad, Dept. of CSE – Allied, MVSR Engineering College).
 
@@ -48,15 +48,13 @@ The application interface is built with Jetpack Compose following a modern fitne
   <em>Figure 3: (Left) Live recording HUD showing elapsed bout duration, real-time sensor health indicators, landmark marker button, and a 2-second hold-to-stop safety trigger. (Right) Post-session quality calculator showing achieved rates, dropped gaps, and ground-truth step count audit entry.</em>
 </p>
 
-### D. Device Configuration, Dataset Coverage & Cloud Sync
+### D. Dataset Coverage Tracker
 <p align="center">
-  <img src="screenshots/05_settings.png" width="300" alt="Device Profile and Permissions" />
-  &nbsp;&nbsp;
-  <img src="screenshots/06_coverage_tracker.png" width="300" alt="Dataset Coverage Matrix" />
-  &nbsp;&nbsp;
-  <img src="screenshots/07_sessions.png" width="300" alt="Recorded Sessions and S3 Sync Status" />
+  <img src="screenshots/06_coverage_tracker.png" width="360" alt="Dataset Coverage Matrix" />
 </p>
 <p align="center">
+  <em>Figure 4: Dataset coverage matrix tracking collected hours across genuine, benign, and fraud activity classes against the protocol collection target.</em>
+</p><p align="center">
   <em>Figure 4: (Left) Device hardware specifications and runtime permissions. (Center) Dataset coverage matrix monitoring collected hours across genuine, benign, and fraud classes. (Right) Local session archive with one-tap cloud sync status.</em>
 </p>
 
@@ -176,7 +174,7 @@ The compiled package will be located at:
 
 The following items are documented for explicit confirmation by the project owners:
 
-1. **Dataset Size Target:** The approved project handover specifies an initial collection target of ~34 collection hours (20 h genuine, 6 h benign, 8 h fraud) across 6 subjects and 6 phone models. The in-app dataset coverage screen currently displays an extended target of 55.0 hours. The 34-hour target satisfies the scientific validity floor for Leave-One-Subject-Out splits.
+1. **Dataset Size Target:** The approved project handover specifies an initial collection target of ~34 collection hours (20 h genuine, 6 h benign, 8 h fraud) across 6 subjects and 6 phone models. The in-app dataset coverage screen currently displays an extended target of 55.0 hours. Whether 34 hours is sufficient for meaningful Leave-One-Subject-Out cross-validation is an open research question dependent on within-subject variance and not an established fact.
 2. **Participant Cohort Scope:** The application defaults to the approved cohort of 6 participants (`S01`–`S06`). The `+ New ID` feature remains available if institutional review permits cohort expansion.
 3. **Attack Availability:** Attack **F4** (motorized auto-walker) is dropped due to mechanical rig exclusions; **F5** (rotating turntable/fan) is conditional on equipment availability; **F8** (sensor injection) is deferred to Capstone-II testing.
 4. **Target IMU Sampling Rate:** 100 Hz represents the target requested rate; actual achieved rates vary across OEM hardware and HAL implementations (rates $\ge 95\text{ Hz}$ satisfy dataset compliance).
