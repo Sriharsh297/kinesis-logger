@@ -14,9 +14,11 @@ import android.os.Binder
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
+import android.os.SystemClock
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -28,6 +30,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.kinesis.logger.MainActivity
 import org.kinesis.logger.R
+import org.kinesis.logger.data.TaskRepository
+import org.kinesis.logger.quality.SessionFinalizer
 import org.kinesis.logger.recorder.SensorRecorder
 import org.kinesis.logger.recorder.SessionWriter
 import java.io.File
@@ -51,15 +55,16 @@ class RecordingService : Service() {
         private set
 
     private lateinit var crashRecoveryManager: CrashRecoveryManager
-
-    private val _hudState = MutableStateFlow(LiveRecordingHud())
-    val hudState: StateFlow<LiveRecordingHud> = _hudState.asStateFlow()
+    private lateinit var taskRepository: TaskRepository
 
     private var currentSessionId: String = ""
     private var currentSessionDir: File? = null
+    private var currentTaskId: String = "T01"
+    private var currentSubjectId: String = "S01"
     private var plannedDurationSeconds: Int = 480
 
     companion object {
+        private const val TAG = "RecordingService"
         const val CHANNEL_ID = "kinesis_recording_channel"
         const val NOTIFICATION_ID = 1001
 
@@ -72,9 +77,53 @@ class RecordingService : Service() {
         const val EXTRA_PLANNED_DURATION_S = "extra_planned_duration_s"
         const val EXTRA_MARKER_NOTE = "extra_marker_note"
 
-        // Singleton instance accessible by UI
+        // Singleton StateFlow observed by UI components
+        private val _hudState = MutableStateFlow(LiveRecordingHud())
+        val hudState: StateFlow<LiveRecordingHud> = _hudState.asStateFlow()
+
         var instance: RecordingService? = null
             private set
+
+        fun start(context: Context, taskId: String, subjectId: String, plannedDurationS: Int) {
+            val intent = Intent(context, RecordingService::class.java).apply {
+                action = ACTION_START
+                putExtra(EXTRA_TASK_ID, taskId)
+                putExtra(EXTRA_SUBJECT_ID, subjectId)
+                putExtra(EXTRA_PLANNED_DURATION_S, plannedDurationS)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+        }
+
+        fun stopBoutEarly(context: Context) {
+            val intent = Intent(context, RecordingService::class.java).apply {
+                action = ACTION_STOP_BOUT
+            }
+            context.startService(intent)
+        }
+
+        fun markEvent(context: Context, note: String) {
+            val intent = Intent(context, RecordingService::class.java).apply {
+                action = ACTION_MARK_EVENT
+                putExtra(EXTRA_MARKER_NOTE, note)
+            }
+            context.startService(intent)
+        }
+
+        fun updateHudGps(accuracyMeters: Float, provider: String) {
+            _hudState.value = _hudState.value.copy(
+                gpsAccuracyMeters = accuracyMeters,
+                gpsFixCount = _hudState.value.gpsFixCount + 1,
+                lastSensorUpdateMs = System.currentTimeMillis()
+            )
+        }
+
+        fun resetHud() {
+            _hudState.value = LiveRecordingHud()
+        }
     }
 
     private val screenReceiver = object : BroadcastReceiver() {
@@ -102,6 +151,7 @@ class RecordingService : Service() {
         super.onCreate()
         instance = this
         crashRecoveryManager = CrashRecoveryManager(this)
+        taskRepository = TaskRepository(this)
 
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
         wakeLock = powerManager.newWakeLock(
@@ -133,11 +183,11 @@ class RecordingService : Service() {
             ACTION_START -> {
                 val taskId = intent.getStringExtra(EXTRA_TASK_ID) ?: "T01"
                 val subjectId = intent.getStringExtra(EXTRA_SUBJECT_ID) ?: "S01"
-                plannedDurationSeconds = intent.getIntExtra(EXTRA_PLANNED_DURATION_S, 480)
-                initAndStartRecording(taskId, subjectId, plannedDurationSeconds)
+                val plannedDuration = intent.getIntExtra(EXTRA_PLANNED_DURATION_S, 480)
+                initAndStartRecording(taskId, subjectId, plannedDuration)
             }
             ACTION_STOP_BOUT -> {
-                stopBoutEarly()
+                stopBoutInternal()
             }
             ACTION_MARK_EVENT -> {
                 val note = intent.getStringExtra(EXTRA_MARKER_NOTE) ?: "user_marker"
@@ -148,6 +198,10 @@ class RecordingService : Service() {
     }
 
     private fun initAndStartRecording(taskId: String, subjectId: String, plannedS: Int) {
+        currentTaskId = taskId
+        currentSubjectId = subjectId
+        plannedDurationSeconds = plannedS
+
         val dateFormat = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US)
         val timestamp = dateFormat.format(Date())
         val shortUuid = UUID.randomUUID().toString().substring(0, 6)
@@ -179,6 +233,12 @@ class RecordingService : Service() {
             startForeground(NOTIFICATION_ID, notification)
         }
 
+        _hudState.value = LiveRecordingHud(
+            phase = RecordingPhase.IDLE,
+            sessionId = currentSessionId,
+            plannedBoutSeconds = plannedS
+        )
+
         sensorRecorder?.startRecording()
         runProtocolSequence(plannedS)
     }
@@ -195,6 +255,7 @@ class RecordingService : Service() {
             )
 
             for (sec in 10 downTo 1) {
+                if (_hudState.value.phase != RecordingPhase.COUNTDOWN) break
                 _hudState.value = _hudState.value.copy(phaseRemainingSeconds = sec)
                 if (sec in 1..3) {
                     vibrateTick()
@@ -205,13 +266,14 @@ class RecordingService : Service() {
             vibrateCue()
             sensorRecorder?.logEvent("countdown_end")
 
-            // Phase 2: 5s Still Period
+            // Phase 2: 5s Initial Stillness
             _hudState.value = _hudState.value.copy(
                 phase = RecordingPhase.STILL_INITIAL,
                 phaseRemainingSeconds = 5
             )
             sensorRecorder?.logEvent("still_start", "phase=initial")
             for (sec in 5 downTo 1) {
+                if (_hudState.value.phase != RecordingPhase.STILL_INITIAL) break
                 _hudState.value = _hudState.value.copy(phaseRemainingSeconds = sec)
                 updateNotification("Stand still: ${sec}s")
                 delay(1000L)
@@ -220,6 +282,7 @@ class RecordingService : Service() {
             vibrateCue()
 
             // Phase 3: Active Bout
+            val boutStartMonoMs = SystemClock.elapsedRealtime()
             _hudState.value = _hudState.value.copy(
                 phase = RecordingPhase.BOUT,
                 boutElapsedSeconds = 0,
@@ -227,28 +290,57 @@ class RecordingService : Service() {
             )
             sensorRecorder?.logEvent("bout_start", "planned_s=$plannedS")
 
-            var elapsed = 0
-            while (elapsed < plannedS && _hudState.value.phase == RecordingPhase.BOUT) {
-                delay(1000L)
-                elapsed++
+            var lastSampleCountTime = boutStartMonoMs
+            var lastAccelCount = 0L
+            var lastGyroCount = 0L
+            var elapsedSec = 0
+
+            while (elapsedSec < plannedS && _hudState.value.phase == RecordingPhase.BOUT) {
+                delay(500L)
+                val nowMono = SystemClock.elapsedRealtime()
+                elapsedSec = ((nowMono - boutStartMonoMs) / 1000L).toInt()
+
+                val currentAccel = sessionWriter?.accelCount?.get() ?: 0L
+                val currentGyro = sessionWriter?.gyroCount?.get() ?: 0L
+                val timeDeltaSec = (nowMono - lastSampleCountTime) / 1000.0
+
+                val liveAccelHz = if (timeDeltaSec >= 0.5) {
+                    ((currentAccel - lastAccelCount) / timeDeltaSec).toFloat()
+                } else _hudState.value.accelLiveHz
+
+                val liveGyroHz = if (timeDeltaSec >= 0.5) {
+                    ((currentGyro - lastGyroCount) / timeDeltaSec).toFloat()
+                } else _hudState.value.gyroLiveHz
+
+                if (timeDeltaSec >= 0.5) {
+                    lastAccelCount = currentAccel
+                    lastGyroCount = currentGyro
+                    lastSampleCountTime = nowMono
+                }
+
                 _hudState.value = _hudState.value.copy(
-                    boutElapsedSeconds = elapsed,
-                    phaseRemainingSeconds = (plannedS - elapsed).coerceAtLeast(0),
-                    accelSamplesReceived = sessionWriter?.accelCount?.get() ?: 0,
-                    gyroSamplesReceived = sessionWriter?.gyroCount?.get() ?: 0,
-                    osStepsReference = sensorRecorder?.lastOsStepCumulative?.get() ?: 0
+                    boutElapsedSeconds = elapsedSec,
+                    phaseRemainingSeconds = (plannedS - elapsedSec).coerceAtLeast(0),
+                    accelSamplesReceived = currentAccel,
+                    gyroSamplesReceived = currentGyro,
+                    accelLiveHz = liveAccelHz,
+                    gyroLiveHz = liveGyroHz,
+                    osStepsReference = sensorRecorder?.lastOsStepCumulative?.get() ?: 0L,
+                    lastSensorUpdateMs = sensorRecorder?.lastSensorEventMs?.get() ?: System.currentTimeMillis()
                 )
-                val elapsedStr = String.format("%02d:%02d / %02d:%02d", elapsed / 60, elapsed % 60, plannedS / 60, plannedS % 60)
+
+                val elapsedStr = String.format("%02d:%02d / %02d:%02d", elapsedSec / 60, elapsedSec % 60, plannedS / 60, plannedS % 60)
                 updateNotification("Recording Bout: $elapsedStr")
             }
 
-            // Phase 4: Final 5s Still Period
-            sensorRecorder?.logEvent("bout_end", "elapsed_s=$elapsed")
+            // Phase 4: Final 5s Stillness
+            sensorRecorder?.logEvent("bout_end", "elapsed_s=$elapsedSec")
             vibrateCue()
 
             _hudState.value = _hudState.value.copy(
                 phase = RecordingPhase.STILL_FINAL,
-                phaseRemainingSeconds = 5
+                phaseRemainingSeconds = 5,
+                isStopping = true
             )
             sensorRecorder?.logEvent("still_start", "phase=final")
             for (sec in 5 downTo 1) {
@@ -261,56 +353,103 @@ class RecordingService : Service() {
             // Terminal vibration
             vibrateTerminal()
 
-            // Phase 5: Completed
-            _hudState.value = _hudState.value.copy(phase = RecordingPhase.COMPLETED)
-            sensorRecorder?.stopRecording()
+            // Phase 5: Flush, Compress, and Finalize
+            updateNotification("Finalizing data and checksums...")
+            finalizeActiveSession()
 
-            currentSessionDir?.let {
-                crashRecoveryManager.markSessionClosed(currentSessionId)
-            }
-
+            _hudState.value = _hudState.value.copy(
+                phase = RecordingPhase.COMPLETED,
+                isStopping = false
+            )
             updateNotification("Session finished. Review summary.")
         }
     }
 
-    fun stopBoutEarly() {
-        if (_hudState.value.phase == RecordingPhase.BOUT) {
-            // Signal transition to next phase
-            _hudState.value = _hudState.value.copy(phase = RecordingPhase.STILL_FINAL)
+    private fun stopBoutInternal() {
+        val currentPhase = _hudState.value.phase
+        when (currentPhase) {
+            RecordingPhase.BOUT -> {
+                // Signal transition to final stillness
+                _hudState.value = _hudState.value.copy(phase = RecordingPhase.STILL_FINAL, isStopping = true)
+            }
+            RecordingPhase.COUNTDOWN, RecordingPhase.STILL_INITIAL -> {
+                // User aborted before bout started: finalize immediately
+                sequenceJob?.cancel()
+                finalizeActiveSession()
+                _hudState.value = _hudState.value.copy(phase = RecordingPhase.COMPLETED, isStopping = false)
+            }
+            else -> {}
+        }
+    }
+
+    private fun finalizeActiveSession() {
+        try {
+            sensorRecorder?.stopRecording()
+            sessionWriter?.stopAndClose()
+
+            val dir = currentSessionDir
+            if (dir != null && dir.exists()) {
+                val task = taskRepository.getTasks().firstOrNull { it.taskId == currentTaskId }
+                    ?: taskRepository.getTasks().first()
+
+                SessionFinalizer.finalizeSession(
+                    context = applicationContext,
+                    sessionDir = dir,
+                    task = task,
+                    subjectId = currentSubjectId,
+                    sensorRecorder = sensorRecorder
+                )
+
+                crashRecoveryManager.markSessionClosed(currentSessionId)
+                Log.i(TAG, "Successfully finalized session: $currentSessionId")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error finalizing session: ${e.message}", e)
         }
     }
 
     fun markUserEvent(note: String) {
         sensorRecorder?.logEvent("user_marker", note)
+        val elapsed = _hudState.value.boutElapsedSeconds
+        _hudState.value = _hudState.value.copy(
+            lastMarkerNote = note,
+            lastMarkerTimeSec = elapsed
+        )
     }
 
     private fun vibrateTick() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            vibrator?.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
-        } else {
-            @Suppress("DEPRECATION")
-            vibrator?.vibrate(100)
-        }
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator?.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator?.vibrate(100)
+            }
+        } catch (_: Exception) {}
     }
 
     private fun vibrateCue() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            vibrator?.vibrate(VibrationEffect.createOneShot(350, VibrationEffect.DEFAULT_AMPLITUDE))
-        } else {
-            @Suppress("DEPRECATION")
-            vibrator?.vibrate(350)
-        }
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator?.vibrate(VibrationEffect.createOneShot(350, VibrationEffect.DEFAULT_AMPLITUDE))
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator?.vibrate(350)
+            }
+        } catch (_: Exception) {}
     }
 
     private fun vibrateTerminal() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val timings = longArrayOf(0, 300, 150, 600)
-            val amplitudes = intArrayOf(0, 200, 0, 255)
-            vibrator?.vibrate(VibrationEffect.createWaveform(timings, amplitudes, -1))
-        } else {
-            @Suppress("DEPRECATION")
-            vibrator?.vibrate(700)
-        }
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val timings = longArrayOf(0, 300, 150, 600)
+                val amplitudes = intArrayOf(0, 200, 0, 255)
+                vibrator?.vibrate(VibrationEffect.createWaveform(timings, amplitudes, -1))
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator?.vibrate(700)
+            }
+        } catch (_: Exception) {}
     }
 
     private fun createNotificationChannel() {
@@ -348,7 +487,7 @@ class RecordingService : Service() {
 
     private fun updateNotification(status: String) {
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        manager.notify(NOTIFICATION_ID, buildNotification(status))
+        manager.notify(NOTIFICATION_ID, buildNotification(status, currentTaskId, currentSubjectId))
     }
 
     override fun onDestroy() {
@@ -358,8 +497,7 @@ class RecordingService : Service() {
 
         try {
             unregisterReceiver(screenReceiver)
-        } catch (ignored: Exception) {
-        }
+        } catch (_: Exception) {}
 
         if (wakeLock.isHeld) {
             wakeLock.release()

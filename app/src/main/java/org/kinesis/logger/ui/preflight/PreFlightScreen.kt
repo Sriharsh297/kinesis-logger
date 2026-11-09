@@ -1,7 +1,9 @@
 package org.kinesis.logger.ui.preflight
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.location.LocationManager
@@ -11,6 +13,8 @@ import android.os.Build
 import android.os.PowerManager
 import android.os.StatFs
 import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -36,6 +40,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.PowerSettingsNew
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Sensors
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.SwapCalls
@@ -43,7 +48,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,6 +61,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import org.kinesis.logger.model.Task
 import org.kinesis.logger.ui.components.KinesisCard
 import org.kinesis.logger.ui.components.KinesisPrimaryButton
@@ -91,6 +100,52 @@ fun PreFlightScreen(
     val powerManager = remember { context.getSystemService(Context.POWER_SERVICE) as PowerManager }
     val batteryManager = remember { context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager }
 
+    // Runtime Permission Verification
+    var hasFineLocation by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+    var hasActivityRecognition by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ContextCompat.checkSelfPermission(context, Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_GRANTED
+            } else true
+        )
+    }
+    var hasNotificationPermission by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+            } else true
+        )
+    }
+
+    val permissionsToRequest = remember {
+        buildList {
+            add(Manifest.permission.ACCESS_FINE_LOCATION)
+            add(Manifest.permission.ACCESS_COARSE_LOCATION)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                add(Manifest.permission.ACTIVITY_RECOGNITION)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                add(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }.toTypedArray()
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) {
+        hasFineLocation = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            hasActivityRecognition = ContextCompat.checkSelfPermission(context, Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_GRANTED
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            hasNotificationPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+        }
+    }
+
     // Sensor checks
     val hasAccel = remember { sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null }
     val hasGyro = remember { sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null }
@@ -128,8 +183,9 @@ fun PreFlightScreen(
     val isMockExpected = task.labelType == "F6" || task.labelType == "F7"
 
     // Critical block condition per spec section 6:
-    // Block Start if accelerometer or gyroscope is missing OR free storage < 500 MB
-    val isCriticalFailure = !hasAccel || !hasGyro || freeStorageMb < 500
+    // Block Start if accelerometer or gyroscope is missing OR free storage < 500 MB OR critical permissions missing
+    val isMissingPermissions = !hasFineLocation || !hasActivityRecognition
+    val isCriticalFailure = !hasAccel || !hasGyro || freeStorageMb < 500 || isMissingPermissions
 
     val scrollState = rememberScrollState()
 
@@ -217,7 +273,11 @@ fun PreFlightScreen(
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Missing critical sensors or free storage is under 500 MB.",
+                            text = when {
+                                isMissingPermissions -> "Location and Activity Recognition permissions required before recording."
+                                !hasAccel || !hasGyro -> "Accelerometer or Gyroscope hardware missing."
+                                else -> "Free storage is under 500 MB."
+                            },
                             color = TextSecondary,
                             fontSize = 12.sp
                         )
@@ -250,7 +310,7 @@ fun PreFlightScreen(
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Hardware and environment meet protocol specifications.",
+                            text = "Hardware, permissions, and environment meet protocol specifications.",
                             color = TextSecondary,
                             fontSize = 12.sp
                         )
@@ -260,6 +320,24 @@ fun PreFlightScreen(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
+
+        // Permission Check Card
+        CheckItemCard(
+            icon = Icons.Default.Security,
+            title = "Research Permissions",
+            detail = if (!isMissingPermissions) {
+                "Location, Pedometer, and Notification permissions granted"
+            } else {
+                "CRITICAL: Location or Activity Recognition permission not granted"
+            },
+            level = if (!isMissingPermissions) StatusLevel.PASS else StatusLevel.FAIL,
+            actionLabel = if (isMissingPermissions || !hasNotificationPermission) "Grant" else null,
+            onAction = {
+                permissionLauncher.launch(permissionsToRequest)
+            }
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
 
         // Check Items
         CheckItemCard(
@@ -346,7 +424,13 @@ fun PreFlightScreen(
         // Start Countdown Button
         KinesisPrimaryButton(
             text = "START RECORDING (10s COUNTDOWN)",
-            onClick = onStartRecording,
+            onClick = {
+                if (isMissingPermissions) {
+                    permissionLauncher.launch(permissionsToRequest)
+                } else {
+                    onStartRecording()
+                }
+            },
             enabled = !isCriticalFailure,
             modifier = Modifier.fillMaxWidth()
         )

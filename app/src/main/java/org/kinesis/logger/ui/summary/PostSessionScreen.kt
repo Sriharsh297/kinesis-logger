@@ -86,10 +86,15 @@ fun PostSessionScreen(
     val coroutineScope = rememberCoroutineScope()
     val service = RecordingService.instance
 
-    val sessionWriter = service?.sessionWriter
-    val sessionDir = sessionWriter?.sessionDir ?: run {
+    val hudSessionId = RecordingService.hudState.value.sessionId
+    val sessionDir = if (hudSessionId.isNotBlank()) {
         val baseDir = context.getExternalFilesDir(null) ?: context.filesDir
-        File(File(baseDir, "raw"), "latest")
+        File(File(baseDir, "raw"), hudSessionId)
+    } else {
+        service?.sessionWriter?.sessionDir ?: run {
+            val baseDir = context.getExternalFilesDir(null) ?: context.filesDir
+            File(File(baseDir, "raw"), "latest")
+        }
     }
 
     var qualityReport by remember {
@@ -411,47 +416,24 @@ fun PostSessionScreen(
                 isSaving = true
                 coroutineScope.launch(Dispatchers.IO) {
                     try {
-                        val sessionWriter = service?.sessionWriter
-                        val sensorRecorder = service?.sensorRecorder
-
-                        // Compress and verify CSV files
-                        sessionWriter?.compressAndVerify()
-
-                        // Calculate final hashes
-                        val hashes = ManifestGenerator.generateManifest(sessionDir)
-
-                        val batteryManager = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
-                        val endBattery = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
-
-                        val params = SessionSaveParams(
-                            sessionId = sessionDir.name,
-                            subjectId = subjectId,
+                        org.kinesis.logger.quality.SessionFinalizer.finalizeSession(
+                            context = context,
+                            sessionDir = sessionDir,
                             task = task,
-                            startUtcMs = sensorRecorder?.startUtcMs ?: System.currentTimeMillis(),
-                            startElapsedNs = sensorRecorder?.startElapsedNs ?: System.nanoTime(),
-                            bootOffsetMs = sensorRecorder?.bootOffsetMs ?: 0L,
-                            sessionOk = sessionOk,
-                            discardReason = if (!sessionOk) discardReason else null,
-                            notes = notes,
+                            subjectId = subjectId,
+                            sensorRecorder = service?.sensorRecorder,
                             manualStepCount = manualStepCountText.toIntOrNull(),
-                            countMethod = if (task.boutType == "counted") "partner" else null,
-                            batteryStartPct = 80,
-                            batteryEndPct = endBattery,
-                            installId = UUID.randomUUID().toString().substring(0, 8)
+                            notes = notes,
+                            sessionOk = sessionOk,
+                            discardReason = if (!sessionOk) discardReason else null
                         )
 
-                        val sessionJson = SessionJsonBuilder.build(params, qualityReport, hashes)
-                        File(sessionDir, "session.json").writeText(sessionJson.toString(2))
-
-                        // Refresh manifest including session.json
-                        ManifestGenerator.generateManifest(sessionDir)
-
-                        // Enqueue Wi-Fi upload (non-blocking, background coroutine)
+                        // Enqueue upload (non-blocking, background coroutine)
                         val app = context.applicationContext as KinesisApplication
                         app.uploadQueue.enqueue(sessionDir)
 
                         withContext(Dispatchers.Main) {
-                            Toast.makeText(context, "Session saved — uploading on Wi-Fi", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Session saved — uploading data", Toast.LENGTH_SHORT).show()
                             onDone()
                         }
                     } catch (e: Exception) {

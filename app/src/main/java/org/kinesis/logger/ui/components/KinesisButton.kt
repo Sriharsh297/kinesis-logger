@@ -141,15 +141,16 @@ fun KinesisHoldToStopButton(
     onHoldComplete: () -> Unit,
     modifier: Modifier = Modifier,
     holdDurationMs: Long = 2000L,
-    label: String = "HOLD 2s TO STOP"
+    label: String = "HOLD 2s TO STOP BOUT",
+    enabled: Boolean = true
 ) {
     var isPressed by remember { mutableStateOf(false) }
     var progress by remember { mutableFloatStateOf(0f) }
 
-    LaunchedEffect(isPressed) {
-        if (isPressed) {
+    LaunchedEffect(isPressed, enabled) {
+        if (isPressed && enabled) {
             val startTime = System.currentTimeMillis()
-            while (isPressed) {
+            while (isPressed && enabled) {
                 val elapsed = System.currentTimeMillis() - startTime
                 val currentProgress = (elapsed.toFloat() / holdDurationMs).coerceIn(0f, 1f)
                 progress = currentProgress
@@ -170,34 +171,48 @@ fun KinesisHoldToStopButton(
             .fillMaxWidth()
             .height(56.dp)
             .clip(Shapes.medium)
-            .background(Color(0xFF2B1D24))
-            .border(1.dp, RedAlert.copy(alpha = 0.4f), Shapes.medium)
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onPress = {
-                        isPressed = true
-                        tryAwaitRelease()
-                        isPressed = false
+            .background(if (enabled) Color(0xFF2B1D24) else SurfaceDark)
+            .border(1.dp, if (enabled) RedAlert.copy(alpha = 0.4f) else CardBorder, Shapes.medium)
+            .then(
+                if (enabled) {
+                    Modifier.pointerInput(Unit) {
+                        detectTapGestures(
+                            onPress = {
+                                isPressed = true
+                                val released = tryAwaitRelease()
+                                isPressed = false
+                            }
+                        )
                     }
-                )
-            },
+                } else Modifier
+            ),
         contentAlignment = Alignment.CenterStart
     ) {
         // Progress fill
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(progress)
-                .height(56.dp)
-                .background(RedAlert.copy(alpha = 0.5f))
-        )
+        if (enabled && progress > 0f) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(progress)
+                    .height(56.dp)
+                    .background(RedAlert.copy(alpha = 0.5f))
+            )
+        }
         // Button text
         Box(
             modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = if (isPressed) "HOLDING... ${(progress * 100).toInt()}%" else label,
-                color = if (isPressed) Color.White else RedAlert,
+                text = when {
+                    !enabled -> "FINALIZING & COMPUTING..."
+                    isPressed -> "HOLDING... ${(progress * 100).toInt()}%"
+                    else -> label
+                },
+                color = when {
+                    !enabled -> TextMuted
+                    isPressed -> Color.White
+                    else -> RedAlert
+                },
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp,
                 letterSpacing = 0.5.sp

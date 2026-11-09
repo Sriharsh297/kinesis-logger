@@ -48,6 +48,7 @@ class SensorRecorder(
     val lastOsStepCumulative = AtomicLong(-1L)
     val initialOsStepCount = AtomicLong(-1L)
     val osStepEventCount = AtomicLong(0L)
+    val lastSensorEventMs = AtomicLong(0L)
 
     private val fusedCallback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {
@@ -143,6 +144,7 @@ class SensorRecorder(
     override fun onSensorChanged(event: SensorEvent?) {
         if (event == null || !isRecording.get()) return
 
+        lastSensorEventMs.set(System.currentTimeMillis())
         val tNs = event.timestamp
 
         when (event.sensor.type) {
@@ -212,6 +214,11 @@ class SensorRecorder(
         } else {
             -1f
         }
+
+        lastSensorEventMs.set(System.currentTimeMillis())
+        try {
+            org.kinesis.logger.service.RecordingService.updateHudGps(location.accuracy, provider)
+        } catch (_: Exception) {}
 
         writer.offerLocation(
             LocationSample(

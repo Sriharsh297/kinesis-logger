@@ -1,10 +1,5 @@
 # Kinesis — Complete Project Handover
 
-## For: A Sriharsh (continuing in a new AI session)
-
-## Prepared by: Claude (project manager role), from the full conversation with P Samuel Vijay
-
-## Date: November 2026
 
 ---
 

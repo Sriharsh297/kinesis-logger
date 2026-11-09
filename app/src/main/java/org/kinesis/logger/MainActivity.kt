@@ -1,13 +1,15 @@
 package org.kinesis.logger
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
-
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -17,15 +19,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-
+import androidx.core.content.ContextCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-
 import org.kinesis.logger.data.TaskRepository
 import org.kinesis.logger.service.CrashRecoveryManager
 import org.kinesis.logger.service.RecordingService
-
 import org.kinesis.logger.ui.coverage.CoverageScreen
 import org.kinesis.logger.ui.dashboard.DashboardScreen
 import org.kinesis.logger.ui.preflight.PreFlightScreen
@@ -36,11 +36,15 @@ import org.kinesis.logger.ui.summary.PostSessionScreen
 import org.kinesis.logger.ui.theme.BgDark
 import org.kinesis.logger.ui.theme.KinesisLoggerTheme
 
-
 class MainActivity : ComponentActivity() {
 
     private lateinit var taskRepository: TaskRepository
     private lateinit var crashRecoveryManager: CrashRecoveryManager
+
+    private val permissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+            // Evaluated dynamically in PreFlightScreen
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,6 +67,24 @@ class MainActivity : ComponentActivity() {
             ).show()
         }
 
+        // Request missing critical permissions on first launch
+        val missingPermissions = buildList {
+            add(Manifest.permission.ACCESS_FINE_LOCATION)
+            add(Manifest.permission.ACCESS_COARSE_LOCATION)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                add(Manifest.permission.ACTIVITY_RECOGNITION)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                add(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }.filter {
+            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        }
+
+        if (missingPermissions.isNotEmpty()) {
+            permissionLauncher.launch(missingPermissions.toTypedArray())
+        }
+
         setContent {
             KinesisLoggerTheme {
                 Surface(
@@ -72,30 +94,12 @@ class MainActivity : ComponentActivity() {
                     KinesisAppNavigation(
                         taskRepository = taskRepository,
                         onStartService = { taskId, subjectId, plannedDurationS ->
-
-                            val intent = Intent(
+                            RecordingService.start(
                                 this,
-                                RecordingService::class.java
-                            ).apply {
-                                action = RecordingService.ACTION_START
-
-                                putExtra(
-                                    RecordingService.EXTRA_TASK_ID,
-                                    taskId
-                                )
-
-                                putExtra(
-                                    RecordingService.EXTRA_SUBJECT_ID,
-                                    subjectId
-                                )
-
-                                putExtra(
-                                    RecordingService.EXTRA_PLANNED_DURATION_S,
-                                    plannedDurationS
-                                )
-                            }
-
-                            startService(intent)
+                                taskId,
+                                subjectId,
+                                plannedDurationS
+                            )
                         }
                     )
                 }

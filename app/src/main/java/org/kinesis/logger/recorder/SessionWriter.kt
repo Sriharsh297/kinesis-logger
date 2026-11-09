@@ -284,34 +284,36 @@ class SessionWriter(
         return false
     }
 
-    private fun gzipFile(source: File, target: File): Boolean {
-        if (!source.exists()) return false
-        return try {
-            FileInputStream(source).use { fis ->
-                GZIPOutputStream(FileOutputStream(target)).use { gzos ->
-                    fis.copyTo(gzos)
+    companion object {
+        fun gzipFile(source: File, target: File): Boolean {
+            if (!source.exists()) return false
+            return try {
+                FileInputStream(source).use { fis ->
+                    GZIPOutputStream(FileOutputStream(target)).use { gzos ->
+                        fis.copyTo(gzos)
+                    }
                 }
+                true
+            } catch (e: Exception) {
+                e.printStackTrace()
+                false
             }
-            true
-        } catch (e: Exception) {
-            e.printStackTrace()
-            false
         }
-    }
 
-    private fun verifyGzip(file: File): Boolean {
-        if (!file.exists()) return false
-        return try {
-            GZIPInputStream(FileInputStream(file)).use { gzis ->
-                val buffer = ByteArray(8192)
-                while (gzis.read(buffer) > 0) {
-                    // read through to verify CRC
+        fun verifyGzip(file: File): Boolean {
+            if (!file.exists()) return false
+            return try {
+                GZIPInputStream(FileInputStream(file)).use { gzis ->
+                    val buffer = ByteArray(8192)
+                    while (gzis.read(buffer) > 0) {
+                        // read through to verify CRC
+                    }
                 }
+                true
+            } catch (e: Exception) {
+                e.printStackTrace()
+                false
             }
-            true
-        } catch (e: Exception) {
-            e.printStackTrace()
-            false
         }
     }
 }

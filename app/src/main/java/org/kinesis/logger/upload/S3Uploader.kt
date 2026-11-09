@@ -4,8 +4,8 @@ import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import org.kinesis.logger.recorder.SessionWriter
 import java.io.File
-import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.security.MessageDigest
@@ -20,12 +20,14 @@ sealed class UploadResult {
  * Kinesis S3 upload pipeline (spec v0.5).
  *
  * Protocol:
- *  1. POST {session_id, filename, sha256} to [presignEndpoint] → receive presigned PUT URL.
- *  2. PUT the file bytes to that URL with the matching checksum header.
- *  3. Verify 200/204; mark session uploaded only after manifest.sha256 succeeds.
+ *  1. Ensure accel and gyro are gzip-compressed.
+ *  2. Verify all mandatory session files exist.
+ *  3. POST {session_id, filename, sha256} to [presignEndpoint] → receive presigned PUT URL.
+ *  4. PUT the file bytes to that URL with the matching checksum header.
+ *  5. Verify HTTP 200/204; mark session uploaded only after manifest.sha256 succeeds.
  *
  * Rules:
- * - Wi-Fi only (caller must check NetworkCapabilities before calling).
+ * - Supports Wi-Fi and Mobile Data (configurable).
  * - AWS keys NEVER embedded in the APK.
  * - Local copy stays intact until all files are verified on S3.
  */
@@ -38,7 +40,7 @@ object S3Uploader {
     private const val READ_TIMEOUT_MS    = 60_000
 
     // Files to upload in order; manifest last so it's the commit marker.
-    private val UPLOAD_ORDER = listOf(
+    val UPLOAD_ORDER = listOf(
         "accel.csv.gz",
         "gyro.csv.gz",
         "location.csv",
@@ -63,10 +65,39 @@ object S3Uploader {
 
         val sessionId = sessionDir.name
         val results   = mutableMapOf<String, UploadResult>()
-        val files     = UPLOAD_ORDER.mapNotNull { name ->
-            val f = File(sessionDir, name)
-            if (f.exists() && f.length() > 0) name to f else null
+
+        // 1. Ensure accel and gyro are gzip-compressed if raw exists
+        val accelRaw = File(sessionDir, "accel.csv")
+        val accelGz = File(sessionDir, "accel.csv.gz")
+        if (accelRaw.exists() && !accelGz.exists()) {
+            val ok = SessionWriter.gzipFile(accelRaw, accelGz)
+            if (ok && SessionWriter.verifyGzip(accelGz)) accelRaw.delete()
         }
+
+        val gyroRaw = File(sessionDir, "gyro.csv")
+        val gyroGz = File(sessionDir, "gyro.csv.gz")
+        if (gyroRaw.exists() && !gyroGz.exists()) {
+            val ok = SessionWriter.gzipFile(gyroRaw, gyroGz)
+            if (ok && SessionWriter.verifyGzip(gyroGz)) gyroRaw.delete()
+        }
+
+        // 2. Validate all mandatory files exist before starting network calls
+        for (requiredName in UPLOAD_ORDER) {
+            val f = File(sessionDir, requiredName)
+            if (!f.exists()) {
+                Log.e(TAG, "Cannot upload [$sessionId]: mandatory file missing: $requiredName")
+                results[requiredName] = UploadResult.Failure(
+                    reason = "Mandatory file missing: $requiredName",
+                    retryable = false
+                )
+            }
+        }
+
+        if (results.any { it.value is UploadResult.Failure }) {
+            return@withContext results
+        }
+
+        val files = UPLOAD_ORDER.map { name -> name to File(sessionDir, name) }
         val total = files.size
 
         for ((index, pair) in files.withIndex()) {
@@ -148,7 +179,7 @@ object S3Uploader {
         }
 
         file.inputStream().use { input ->
-            conn.outputStream.use { output -> input.copyTo(output) }
+            conn.outputStream.use { output -> input.copyTo(output, bufferSize = 64 * 1024) }
         }
 
         val code = conn.responseCode
@@ -183,7 +214,12 @@ object S3Uploader {
         else                       -> "text/plain"
     }
 
-    /** True when all files in [results] succeeded. */
-    fun allSucceeded(results: Map<String, UploadResult>) =
-        results.isNotEmpty() && results.values.all { it is UploadResult.Success }
+    /** True when every mandatory file in [UPLOAD_ORDER] succeeded. */
+    fun allSucceeded(results: Map<String, UploadResult>): Boolean {
+        if (results.isEmpty()) return false
+        val allRequiredPresent = UPLOAD_ORDER.all { name ->
+            results[name] is UploadResult.Success
+        }
+        return allRequiredPresent
+    }
 }

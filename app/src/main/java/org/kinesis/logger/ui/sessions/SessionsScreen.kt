@@ -169,7 +169,8 @@ fun SessionsScreen(
                     if (rawDir.exists()) {
                         uploadQueue.drainQueue(rawDir)
                     }
-                    Toast.makeText(context, "Queued pending uploads (Wi-Fi required)", Toast.LENGTH_SHORT).show()
+                    val msg = if (uploadQueue.isWifiRequired()) "Queued pending uploads (Wi-Fi only)" else "Queued pending uploads"
+                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                 },
                 modifier = Modifier.size(48.dp)
             ) {
@@ -290,7 +291,8 @@ fun SessionsScreen(
                                         onClick = {
                                             uploadQueue.enqueue(session.directory)
                                             refreshSessions()
-                                            Toast.makeText(context, "Upload queued (Wi-Fi required)", Toast.LENGTH_SHORT).show()
+                                            val msg = if (uploadQueue.isWifiRequired()) "Upload queued (Wi-Fi only)" else "Upload queued"
+                                            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                                         },
                                         modifier = Modifier.size(44.dp)
                                     ) {
