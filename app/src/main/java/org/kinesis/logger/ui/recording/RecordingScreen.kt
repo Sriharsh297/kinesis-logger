@@ -329,7 +329,7 @@ fun RecordingScreen(
             val accelOk = hudState.accelSamplesReceived > 0
 
             MetricChip(
-                label = "Accel Rate",
+                label = "Accel Sample Rate",
                 value = accelDisplay,
                 unit = null,
                 valueColor = if (accelOk) GreenSuccess else AmberWarning,
@@ -344,7 +344,7 @@ fun RecordingScreen(
             val gyroOk = hudState.gyroSamplesReceived > 0
 
             MetricChip(
-                label = "Gyro Rate",
+                label = "Gyro Sample Rate",
                 value = gyroDisplay,
                 unit = null,
                 valueColor = if (gyroOk) GreenSuccess else AmberWarning,

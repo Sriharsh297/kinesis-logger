@@ -278,13 +278,14 @@ E. Sessions and upload: a list of sessions (date, task, duration, status: local,
 
 ## 9. Full collection plan
 
-| Family | Types and hours | Total |
-| --- | --- | --- |
-| GENUINE\_MOVEMENT | G1 20, G2 4, G3 2, G4 3, G5 3 | 32 h |
-| BENIGN\_NON\_WALK | B1 3, B2 3, B3 1.5, B4 1.5 | 9 h |
-| FRAUD (phase 1) | F1 1.5, F2 1.5, F3 2, F4 2, F5 1.5, F6 2, F7 2.5 | 13 h |
-| FRAUD (phase 2) | F8 | 1 h |
-| Total |  | about 55 h |
+| Family | Phase 1 target | Extended (Phase 1b) |
+| --- | ---: | ---: |
+| GENUINE\_MOVEMENT | 20 h | 32 h |
+| BENIGN\_NON\_WALK | 6 h | 9 h |
+| FRAUD | 8 h | 14 h |
+| **Total** | **~34 h** | **~55 h** |
+
+These targets are cumulative recording time across individual task-card bouts, subjects, and phones; they are not continuous sessions. Each task-card bout is the atomic unit (for example, T01 is 8 minutes and T04 is 1 minute). Repeating a card for another subject or phone adds another bout toward the dataset total. As a rough planning estimate, 20 hours of genuine movement is about 150 bouts of 3–8 minutes each, distributed across the cohort and devices.
 
 10 s windows with a 5 s stride give 720 windows per hour: about 40,000 windows in total, about 20,000 independent.
 

@@ -396,8 +396,12 @@ fun PreFlightScreen(
 
         CheckItemCard(
             icon = Icons.Default.SwapCalls,
-            title = "Mock Location Status",
-            detail = if (isMockExpected) "Mock mode expected for task ${task.labelType}" else "Real hardware coordinates expected",
+            title = "Mock Location Protocol",
+            detail = if (isMockExpected) {
+                "Task ${task.labelType} requires mock GPS. This is guidance only; verify is_mock in the saved location data."
+            } else {
+                "Use real GPS for this task. This screen does not detect active mock locations; verify is_mock in the saved data."
+            },
             level = StatusLevel.INFO
         )
 
